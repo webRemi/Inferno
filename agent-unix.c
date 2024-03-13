@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// command execution
 void command(char *instruction, char *argument) {
     char *pathname = instruction;
     char *argv[] = {pathname, argument, NULL};
