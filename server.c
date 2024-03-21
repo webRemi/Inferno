@@ -48,27 +48,37 @@ int main() {
     if (inferno_listen == -1) 
         error("Listening failed");
 
-    //accept
-    printf("Accepting...\n");
-    int inferno_accept = accept(inferno_socket, NULL, NULL);
-    if (inferno_accept == -1)
-        error("Accepting failed");
-
     while (1) {
-    //receive
-    char input[1024];
-    printf("Receiving...\n");
-    int inferno_receive = recv(inferno_accept, input, sizeof(input), 0);
-    input[inferno_receive] = '\0';
-    printf("Received: %s\n", input);
-    }
-    //close accept
-    close(inferno_accept);
+        //accept
+        printf("Accepting...\n");
+        int inferno_accept = accept(inferno_socket, NULL, NULL);
+        if (inferno_accept == -1)
+            error("Accepting failed");
 
-    //close
-    printf("Closing socket...\n");
-    if (close(inferno_socket) == -1)
-        error("Failed closing socket");
+        while (1) {
+            //receive
+            char input[1024];
+            printf("Receiving...\n");
+            int inferno_receive = recv(inferno_accept, input, sizeof(input), 0);
+            if (inferno_receive == 0) {
+                 printf("Socket closed by peer\n");
+                 break;
+            }
+
+            input[inferno_receive] = '\0';
+            printf("Received: %d bytes\n", strlen(input));
+            printf("Received: %s\n", input);
+        }
+
+        //close accept
+        close(inferno_accept);
+
+    }
+
+        //close
+        printf("Closing socket...\n");
+        if (close(inferno_socket) == -1)
+            error("Failed closing socket");
 }
 
 /*
