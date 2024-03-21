@@ -65,6 +65,19 @@ int main() {
             input[inferno_receive] = '\0';
             printf("Received: %d bytes\n", strlen(input));
             printf("Received: %s\n", input);
+            
+            char result[1024];
+            if (strcmp(input, "whoami") == 0) {
+                strcpy(result, "root");
+            } else {
+                strcpy(result, "not yet built!");
+            }
+            //sending
+            printf("Sending: %d bytes\n", strlen(result));
+            ssize_t inferno_send = send(inferno_accept, result, sizeof(result), 0);
+            printf("Sent: %s\n", result);
+
+
         }
 
         //close accept

