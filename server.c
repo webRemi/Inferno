@@ -20,9 +20,6 @@ void error(char *message) {
 
 int main() {
 
-    const char response_ok[] = "HTTP/1.0 200 OK\r\n\r\n";
-    char request[1024];
-    char request_copy[1024];
     //socket
     printf("Initializing socket...\n");
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -84,6 +81,10 @@ int main() {
 /*
 void write() {
 
+        const char response_ok[] = "HTTP/1.0 200 OK\r\n\r\n";
+        char request[1024];
+        char request_copy[1024];
+        
         printf("Content: %s\n", content);
 
         char readed[1024];
