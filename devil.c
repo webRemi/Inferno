@@ -9,11 +9,14 @@
 #define IP "127.0.0.1"
 #define PORT 8000
 
+//networked part
 void networking();
-
+//executing command
 char *executing(char *receive);
-
+//whoami command
 char *whoamiCommand();
+//hostname command
+char *hostnameCommand();
 
 int main() {
     networking();
@@ -56,7 +59,10 @@ char *executing(char *receive) {
     if (strcmp(receive, "whoami") == 0) {
         printf("Executing %s...\n", receive);
         task = whoamiCommand();
-    } else {
+    } else if (strcmp(receive, "hostname") == 0) {
+        printf("Executing %s...\n", receive);
+        task = hostnameCommand();
+    }else {
         task = "hello";
     } return task;
 }
@@ -64,4 +70,10 @@ char *executing(char *receive) {
 char *whoamiCommand() {
     char *username = getlogin();
     return username;
+}
+
+char *hostnameCommand() {
+    static char hostname[1024];
+    gethostname(hostname, 1024);
+    return hostname;
 }
