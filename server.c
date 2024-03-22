@@ -11,6 +11,7 @@
 #define IP "127.0.0.1"
 #define PORT 8000
 
+//handle erros
 void error(char *message) {
     fprintf(stderr, "%s: %s\n", message, strerror(errno));
     exit(EXIT_FAILURE);
@@ -66,7 +67,6 @@ int main() {
                  break;
             }
 
-            input[strcspn(input, "\n")] = '\0';
             printf("Received: %d bytes\n", strlen(input));
             printf("Received: %s\n", input);
             

