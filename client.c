@@ -8,9 +8,13 @@
 #define IP "127.0.0.1"
 #define PORT 8000
 
+//print the banner
 void banner();
+//sending infos between operators
 void info();
-char *command();
+//sending task
+//char *command();
+//the networked part
 void networking();
 
 int main() {
@@ -19,9 +23,9 @@ int main() {
     info();
     networking();
 
-    while (1) {
+    /*while (1) {
         command();
-    }
+    }*/
 }
 
 void banner() {
@@ -50,7 +54,7 @@ void info() {
     printf("\033[0m");
 }
 
-char *command() {
+/*char *command() {
     static char input[1024];
     printf("%s\n\n", input);
     printf("[ASX]@[INFERNO]> ");
@@ -66,12 +70,17 @@ char *command() {
          puts("\nClosing c2 and exiting...");
          exit(EXIT_SUCCESS);
     }
+
     return input;
-}
+}*/
 
 void networking() {
     //socket
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m");
     printf("Initializing socket...\n");
+
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     struct sockaddr_in c2_address;
     memset(&c2_address, 0, sizeof(c2_address));
@@ -80,13 +89,19 @@ void networking() {
     c2_address.sin_addr.s_addr = inet_addr(IP);
 
     //connect
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m"); 
     printf("Connecting...\n");
     int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    printf("Connected");
-    
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m");
+    printf("Connected\n");
 
     while (1) {
 
+        //crafting task
         static char instruction[1024];
         printf("\n[ASX]@[INFERNO]> ");
 
@@ -98,18 +113,50 @@ void networking() {
         instruction[strcspn(instruction, "\n")] = '\0';
     
         if (strcmp(instruction, "exit") == 0) {
+            printf("\033[38;5;208m");
+            printf("[>] ");
+            printf("\033[0m");
             puts("\nClosing c2 and exiting...");
             exit(EXIT_SUCCESS);
         }
-
+        
+        if (strcmp(instruction, "http") == 0) {
+            printf("\033[38;5;208m");
+            printf("\n[>] ");
+            printf("\033[0m");
+            
+            puts("Starting listener...");
+            printf("\033[38;5;208m");
+            printf("[>] ");
+            printf("\033[0m");
+            puts("Listening");
+            
+            puts("==============================");
+            printf(" IP: %s                  \n", IP);
+            puts("==============================");
+            printf(" PORT: 80                \n");
+            puts("==============================");
+            continue;
+        }
+        
+        
         //sending
         ssize_t inferno_send = send(inferno_socket, instruction, sizeof(instruction), 0);
 
         // wait for response
         char receive[1024];
+
+        printf("\033[38;5;208m");
+        printf("\n[>] ");
+        printf("\033[0m");
         printf("Waiting for response...\n");
+        
         int inferno_receive = recv(inferno_socket, receive, sizeof(receive), 0);
         receive[strcspn(receive, "\n")] = '\0';
+        
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
         printf("Result: %s\n", receive);
     }
 }
