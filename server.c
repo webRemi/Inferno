@@ -53,7 +53,7 @@ int main() {
             error("Accepting failed");
 
         while (1) {
-            //receive
+            //receive from client
             char input[1024];
             printf("Receiving...\n");
             int inferno_receive = recv(inferno_accept, input, sizeof(input), 0);
@@ -62,21 +62,28 @@ int main() {
                  break;
             }
 
-            input[inferno_receive] = '\0';
+            input[strcspn(input, "\n")] = '\0';
             printf("Received: %d bytes\n", strlen(input));
             printf("Received: %s\n", input);
             
-            char result[1024];
-            if (strcmp(input, "whoami") == 0) {
-                strcpy(result, "root");
-            } else {
-                strcpy(result, "not yet built!");
-            }
-            //sending
-            printf("Sending: %d bytes\n", strlen(result));
-            ssize_t inferno_send = send(inferno_accept, result, sizeof(result), 0);
-            printf("Sent: %s\n", result);
+            printf("Accepting agent...\n");
+            int inferno_accept_agent = accept(inferno_socket, NULL, NULL);
+            
+            //sending to agent
+            printf("Sending: %d bytes\n", strlen(input));
+            ssize_t inferno_send = send(inferno_accept_agent, input, sizeof(input), 0);
+            printf("Sent: %s to agent\n", input);
 
+            //receive from agent
+            char fromagent[1024];
+            printf("Receiving...\n");
+            int inferno_receive_from_agent = recv(inferno_accept_agent, fromagent, sizeof(fromagent), 0);
+            printf("Received\n");
+
+            //send to client
+            printf("Sending: %s to client\n", fromagent);
+            send(inferno_accept, fromagent, sizeof(fromagent), 0);
+            printf("Sent\n");
 
         }
 
