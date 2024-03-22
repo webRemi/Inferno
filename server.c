@@ -51,6 +51,10 @@ int main() {
         int inferno_accept = accept(inferno_socket, NULL, NULL);
         if (inferno_accept == -1)
             error("Accepting failed");
+        
+        //accept agent
+        printf("Accepting agent...\n");
+        int inferno_accept_agent = accept(inferno_socket, NULL, NULL);
 
         while (1) {
             //receive from client
@@ -65,9 +69,6 @@ int main() {
             input[strcspn(input, "\n")] = '\0';
             printf("Received: %d bytes\n", strlen(input));
             printf("Received: %s\n", input);
-            
-            printf("Accepting agent...\n");
-            int inferno_accept_agent = accept(inferno_socket, NULL, NULL);
             
             //sending to agent
             printf("Sending: %d bytes\n", strlen(input));
