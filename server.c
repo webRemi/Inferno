@@ -107,7 +107,7 @@ int main() {
                 executed = http_transfer(http_listener_accept, inside);
                 
                 char response[1024];
-                sprintf(response, "%s\n", executed); 
+                sprintf(response, "%s\r\n", executed); 
                 
                 //sending to client
                 send(inferno_accept, response, sizeof(response), 0);

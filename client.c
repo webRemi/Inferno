@@ -214,10 +214,9 @@ char *session_http(int inferno_socket) {
 
         //receiving payload result from server
         int inferno_receive = recv(inferno_socket, result, sizeof(result), 0);
-        result[strcspn(result, "\n")] = '\0';
         printf("\033[38;5;208m");
         printf("[>] ");
         printf("\033[0m");
-        printf("Result: %s\n", result); 
+        printf("Result:\n%s\n", result); 
     }
 }
