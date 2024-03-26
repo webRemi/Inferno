@@ -166,7 +166,7 @@ char *http_transfer(int http_listener_accept, char *task) {
 
      //receiving egent execution
      static char executed[1024];
-     recv(http_listener_accept, executed, 1024, 0);
+     recv(http_listener_accept, executed, sizeof(executed), 0);
      printf("Received from agent: %s\n", executed);
 
      //return client execution

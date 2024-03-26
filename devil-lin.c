@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -131,7 +132,7 @@ char *whoamiCommand() {
 //hostname syscall
 char *hostnameCommand() {
     static char hostname[1024];
-    gethostname(hostname, sizeof(hostname));
+    gethostname(hostname, 1024);
     return hostname;
 }
 
@@ -144,12 +145,16 @@ char *pwdCommand() {
 
 //ls syscall
 char *lsCommand(char *arg) {
+    char *error;
     if (arg == NULL)
         arg = ".";
     char *buf = malloc(1024 * sizeof(char));
     DIR *dirp = opendir(arg);
-    if (dirp == NULL) 
-        dirp = opendir(".");
+    if (dirp == NULL) {
+        error = "Cannot open directory";
+        return error;
+    }
+
     struct dirent *list;
     sprintf(buf, "Size\tName\n");
     sprintf(buf + strlen(buf), "====\t====\n");
