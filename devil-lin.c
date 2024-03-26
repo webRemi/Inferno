@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -26,7 +27,7 @@ char *hostnameCommand();
 char *pwdCommand();
 
 //ls command
-char *lsCommand(char *arg);
+char *lsCommand(char *path);
 
 int main() {
     networking();
@@ -144,22 +145,37 @@ char *pwdCommand() {
 }
 
 //ls syscall
-char *lsCommand(char *arg) {
+char *lsCommand(char *path) {
+    struct stat sb;
     char *error;
-    if (arg == NULL)
-        arg = ".";
+    if (path == NULL)
+        path = ".";
     char *buf = malloc(1024 * sizeof(char));
-    DIR *dirp = opendir(arg);
+    DIR *dirp = opendir(path);
     if (dirp == NULL) {
         error = "Cannot open directory";
         return error;
     }
 
     struct dirent *list;
-    sprintf(buf, "Size\tName\n");
-    sprintf(buf + strlen(buf), "====\t====\n");
+    sprintf(buf, "Type\t\tSize\tName\n");
+    sprintf(buf + strlen(buf), "====\t\t====\t====\n");
     while ((list = readdir(dirp)) != NULL) {
-        sprintf(buf + strlen(buf), "%d\t%s\t\n", list->d_reclen, list->d_name);
+        char type[1024];
+        char pathname[1024];
+        sprintf(pathname, "%s/%s", path, list->d_name);
+        lstat(pathname, &sb);
+        switch (sb.st_mode & S_IFMT) {
+           case S_IFBLK:  sprintf(type, "block device");            break;
+           case S_IFCHR:  sprintf(type, "character device");        break;
+           case S_IFDIR:  sprintf(type, "directory");               break;
+           case S_IFIFO:  sprintf(type, "FIFO/pipe");               break;
+           case S_IFLNK:  sprintf(type, "symlink");                 break;
+           case S_IFREG:  sprintf(type, "regular file");            break;
+           case S_IFSOCK: sprintf(type, "socket");                  break;
+           default:       sprintf(type, "unknown?");                break;
+        }
+        sprintf(buf + strlen(buf), "%s\t%d\t%s\t\n", type, list->d_reclen, list->d_name);
     }
     return buf;
 }
