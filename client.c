@@ -33,8 +33,10 @@ void commands(int inferno_socket, char *instruction, int session_ready);
 //transfering to/from server
 char *transfer(int inferno_socket, char *instruction);
 
-//a nice small info box
+//a nice small set of info box
 void box_info();
+void box_error();
+void box_success();
 
 int main() {
     banner();
@@ -75,7 +77,7 @@ void client(int inferno_socket) {
         
         if (strcmp(receive, "ok") == 0) {
             session_ready = 1;
-            box_info();
+            box_success();
             printf("SessionX is ready!\n");
         }
     }
@@ -119,7 +121,7 @@ void networking(int inferno_socket) {
     box_info();
     printf("Connecting...\n");
     int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    box_info();
+    box_success();
     printf("Connected\n");
 }
 
@@ -153,13 +155,6 @@ char *session_http(int inferno_socket) {
         char *command = strtok(instruction_payload, " ");
         char *arg1 = strtok(NULL, " ");
         
-        //exiting session
-        if (strcmp(instruction_payload, "exit") == 0) {
-            box_info();
-            puts("Closing session and exiting...");
-            client(inferno_socket);
-        }
-
         //HTTP POST payload
         static char request[1024];
         sprintf(request, "POST /endpoint HTTP/1.0\r\n");
@@ -183,6 +178,13 @@ char *session_http(int inferno_socket) {
         printf("Sending payload to server: %s\n", instruction_payload);
         ssize_t inferno_send = send(inferno_socket, request, sizeof(request), 0);
 
+        //exiting session
+        if (strcmp(instruction_payload, "exit") == 0) {
+            box_info();
+            puts("Closing session and exiting...");
+            client(inferno_socket);
+        }
+
         // wait for response
         char result[1024];
         box_info();
@@ -196,7 +198,7 @@ char *session_http(int inferno_socket) {
         printf("Receiving %d bytes from server...\n", strlen(result));
         
         //result
-        box_info();
+        box_success();
         printf("Result:\n%s", result); 
     }
 }
@@ -214,6 +216,7 @@ void commands(int inferno_socket, char *instruction, int session_ready) {
     //help menu
     if (strcmp(instruction, "help") == 0) {
         help_menu();
+        client(inferno_socket);
     }
     //exiting c2
     else if (strcmp(instruction, "exit") == 0) {
@@ -225,12 +228,18 @@ void commands(int inferno_socket, char *instruction, int session_ready) {
     else if (strcmp(instruction, "http") == 0) {
         box_info();
         puts("Starting listener...");
-        box_info();
+        box_success();
         printf("Listening on ADDRESS: %s\n\r\t\t    PORT: %d\n", IP, PORT_HTTP);
     }
     //entering session
     else if (strcmp(instruction, "enter") == 0 && session_ready) {
         session_http(inferno_socket);
+        client(inferno_socket);
+    }
+    else {
+        box_error();
+        puts("Wrong command");
+        client(inferno_socket);
     }
 }
 
@@ -246,7 +255,7 @@ char *transfer(int inferno_socket, char *instruction) {
     //receiving from server
     recv(inferno_socket, receive, sizeof(receive), 0);
     receive[strcspn(receive, "\n")] = '\0';
-    box_info();
+    box_success();
     printf("Result: %s\n", receive);
     return receive;
 }
@@ -254,5 +263,17 @@ char *transfer(int inferno_socket, char *instruction) {
 void box_info() {
     printf("\033[38;5;208m");
     printf("[>] ");
+    printf("\033[0m");
+}
+
+void box_error() {
+    printf("\033[31;5;208m");
+    printf("[!] ");
+    printf("\033[0m");
+}
+
+void box_success() {
+    printf("\033[32;5;208m");
+    printf("[+] ");
     printf("\033[0m");
 }
