@@ -97,6 +97,7 @@ void networking() {
     	ssize_t inferno_send = send(inferno_socket, response, sizeof(response), 0);
     	printf("Sent:\n\n'%s' from agent...\n", response);
     }
+    close(inferno_socket);
 }
 
 char *executing(char *receive, char *arg) {

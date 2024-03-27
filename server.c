@@ -64,6 +64,7 @@ int main() {
         if (inferno_accept == -1)
             error("Accepting failed");
         printf("Client connected\n");        
+
         while (1) {
             //receive from client
             char input[1024];

@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #define IP "127.0.0.1"
 #define PORT 33333
 #define PORT_HTTP 80
@@ -35,6 +36,7 @@ int main() {
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     networking(inferno_socket);
+    close(inferno_socket);
 }
 
 void banner() {
@@ -86,6 +88,7 @@ void networking(int inferno_socket) {
     printf("Connected\n");
 
     while (1) {
+        
         //crafting task
         static char instruction[1024];
         printf("\n[ASX]@[INFERNO]> ");
@@ -96,7 +99,8 @@ void networking(int inferno_socket) {
         }
 
         instruction[strcspn(instruction, "\n")] = '\0';
-
+        
+        //help menu
         if (strcmp(instruction, "help") == 0) {
             help_menu();
         }        
@@ -111,7 +115,7 @@ void networking(int inferno_socket) {
         }
 
         //starting HTTP listener
-        if (strcmp(instruction, "http") == 0) {
+        if (strcmp(instruction, "http") == 0 && session_ready != 1) {
             printf("\033[38;5;208m");
             printf("[>] ");
             printf("\033[0m");            
