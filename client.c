@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <signal.h>
 #define IP "127.0.0.1"
 #define PORT 33333
 #define PORT_HTTP 80
@@ -64,12 +65,10 @@ int main() {
 }
 
 void client(int inferno_socket) {
-    // check if session is ready
     int session_ready = 0;
-
     while (1) {
         //crafting task
-        static char instruction[1024];
+        static char instruction[2048];
         printf("\n[ASX]@[INFERNO]> ");
 
         if (fgets(instruction, sizeof(instruction), stdin) == NULL){
@@ -113,7 +112,7 @@ void banner() {
 
 void info() {
     printf("\033[1;31m");
-    char info[1024] = "X joined session";
+    char info[2048] = "X joined session";
     printf("\nInfo: %s\n", info);
     printf("\033[0m");
 }
@@ -141,13 +140,14 @@ char *session_http(int inferno_socket) {
 
     //sending session status to server
     char *status = "ok";
-    ssize_t inferno_send = send(inferno_socket, status, sizeof(status), 0);
+    if(send(inferno_socket, status, sizeof(status), 0) == -1)
+        error("Sending status");
     box_info();
     printf("Sent:\n%s\n", status);
 
     while (1) {
     	//crafting task
-    	static char instruction_payload[1024];
+    	static char instruction_payload[2048];
     	printf("[ASX]@[SESSION]> ");
 
     	if (fgets(instruction_payload, sizeof(instruction_payload), stdin) == NULL){
@@ -158,7 +158,7 @@ char *session_http(int inferno_socket) {
         instruction_payload[strcspn(instruction_payload, "\n")] = '\0';
     
         //copying original payload
-        char command_copy[1024];
+        char command_copy[2048];
         strcpy(command_copy, instruction_payload);
 
         //parsing payload
@@ -166,7 +166,7 @@ char *session_http(int inferno_socket) {
         char *arg1 = strtok(NULL, " ");
         
         //HTTP POST payload
-        static char request[1024];
+        static char request[2048];
         sprintf(request, "POST /endpoint HTTP/1.0\r\n");
         sprintf(request + strlen(request), "Host: inferno.com\r\n");
         sprintf(request + strlen(request), "Content-Type: application/json\r\n");
@@ -186,7 +186,8 @@ char *session_http(int inferno_socket) {
         //send payload to server
         box_info();
         printf("Sending payload to server: %s\n", instruction_payload);
-        ssize_t inferno_send = send(inferno_socket, request, sizeof(request), 0);
+        if (send(inferno_socket, request, sizeof(request), 0) == -1)
+            error("Error sending payload to server");
 
         //exiting session
         if (strcmp(instruction_payload, "exit") == 0) {
@@ -196,12 +197,13 @@ char *session_http(int inferno_socket) {
         }
 
         // wait for response
-        char result[1024];
+        char result[2048];
         box_info();
         printf("Waiting for response...\n");
        
         //receiving payload result from server
-        int inferno_receive = recv(inferno_socket, result, sizeof(result), 0);
+        if (recv(inferno_socket, result, sizeof(result), 0) == -1)
+            error("Error receiving payload result from server");
         
         //infos result
         box_info();
@@ -244,7 +246,6 @@ void commands(int inferno_socket, char *instruction, int session_ready) {
     //entering session
     else if (strcmp(instruction, "enter") == 0 && session_ready) {
         session_http(inferno_socket);
-        client(inferno_socket);
     }
     else {
         box_error();
@@ -255,15 +256,17 @@ void commands(int inferno_socket, char *instruction, int session_ready) {
 
 char *transfer(int inferno_socket, char *instruction) {
     //sending
-    send(inferno_socket, instruction, sizeof(instruction), 0);
+    if (send(inferno_socket, instruction, sizeof(instruction), 0) == -1)
+        error("Error sending command to server");
 
     // wait for response
-    static char receive[1024];
+    static char receive[2048];
     box_info();
     printf("Waiting for response...\n");
 
     //receiving from server
-    recv(inferno_socket, receive, sizeof(receive), 0);
+    if (recv(inferno_socket, receive, sizeof(receive), 0) == -1)
+        error("Error receiving instruction from server");
     receive[strcspn(receive, "\n")] = '\0';
     box_success();
     printf("Result: %s\n", receive);
@@ -287,3 +290,4 @@ void box_success() {
     printf("[+] ");
     printf("\033[0m");
 }
+

