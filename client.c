@@ -226,7 +226,7 @@ void help_menu() {
     printf("help\t\tshow this menu\n");
     printf("http\t\tstart an HTTP listener\n");
     printf("enter\t\tenter in session\n");
-    printf("sessions\t\tlist active sessions\n\n");
+    printf("sessions\tlist active sessions\n\n");
 }
 
 void commands(int inferno_socket, char *instruction, int session_ready, char *session_storage, int *http_initialized) {
