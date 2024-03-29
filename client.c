@@ -232,10 +232,13 @@ void help_menu() {
 void commands(int inferno_socket, char *instruction, int session_ready, char *session_storage, int *http_initialized) {
     //list sessions
     if (strcmp(instruction, "sessions") == 0) {
-        box_info();
-        printf("SESSIONS\n");
+        printf("\nSESSIONS\n");
         printf("========\n");
-        printf("1. %s\n", session_storage);
+        if (strstr(session_storage, "XXX") != NULL) {
+            printf("1. %s\n", session_storage);
+        } else {
+            printf("No sessions availables\n");
+        }
         client(inferno_socket, session_storage, http_initialized);
     }
     //help menu
