@@ -235,8 +235,10 @@ void commands(int inferno_socket, char *instruction, int session_ready, char *se
         printf("\nSESSIONS\n");
         printf("========\n");
         if (strstr(session_storage, "XXX") != NULL) {
-            printf("1. %s\n", session_storage);
+            box_success();
+            printf("%s\n", session_storage);
         } else {
+            box_error();
             printf("No sessions availables\n");
         }
         client(inferno_socket, session_storage, http_initialized);
