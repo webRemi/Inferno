@@ -158,14 +158,14 @@ char *pwdCommand() {
 //ls syscall
 char *lsCommand(char *path) {
     struct stat sb;
-    char *error;
+    static char error_message[1024];
     if (path == NULL)
         path = ".";
     char *buf = malloc(2048 * sizeof(char));
     DIR *dirp = opendir(path);
     if (dirp == NULL) {
-        error = "Cannot open directory";
-        return error;
+        strerror_r(errno, error_message, sizeof(error_message));
+        return error_message;
     }
 
     struct dirent *list;
