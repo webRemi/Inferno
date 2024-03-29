@@ -251,7 +251,9 @@ void commands(int inferno_socket, char *instruction, int session_ready, char *se
     //exiting c2
     else if (strcmp(instruction, "exit") == 0) {
         box_info();
-        puts("Closing c2 and exiting...");
+        puts("Closing Inferno and exiting...");
+        box_success();
+        puts("Inferno closed successfuly");
         exit(EXIT_SUCCESS);
     }
     //starting HTTP listener
