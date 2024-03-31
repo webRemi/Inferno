@@ -10,6 +10,14 @@
 #define IP "127.0.0.1"
 #define TCP_PORT 33333
 #define HTTP_PORT 80
+#define MAX_LISTENERS 10
+
+struct http_listener {
+    int id;
+    char protocol[20];
+    char address[20];
+    int port;
+};
 
 //handle erros
 void error(char *message) {
@@ -17,12 +25,17 @@ void error(char *message) {
     exit(EXIT_FAILURE);
 }
 
-int http_listener(int tcp_socket, int tcp_accept);
+void craft_http_listener(char *request, struct http_listener *listener, int listener_id, int listener_num);
+
+int start_http_listener(int tcp_socket, int tcp_accept);
 
 //void http_interact(int tcp_socket, int http_socket);
 
 int main() {
-    int http_listener_on = 0;
+    struct http_listener listener[MAX_LISTENERS] = {0};
+    int listener_id = 1;
+    int listener_num = 0;
+    int start_http_listener_on = 0;
     //socket tcp
     puts("Initializing socket...");
     int tcp_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -77,9 +90,13 @@ int main() {
                     error("Error receiving request");
                 printf("Request: %s\n", request);
 
-                if (strcmp(request, "http") == 0) {
-                    int http_socket = http_listener(tcp_socket, tcp_accept);
-
+                if (strncmp(request, "http ", 5) == 0) {
+                    if (listener_id == MAX_LISTENERS)
+                        printf("Sorry no more than %s listeners allowed", MAX_LISTENERS);
+                    craft_http_listener(request, &listener[listener_num], listener_id, listener_num);
+                    listener_id++;
+                    listener_num++;
+                    int http_socket = start_http_listener(tcp_socket, tcp_accept);
                     pid_t http_child_pid = fork();
                     if (http_child_pid == 0) {
                         int http_accept;
@@ -105,17 +122,19 @@ int main() {
 
                 if (strcmp(request, "listeners") == 0) {
                     char listeners[1024];
-                    sprintf(listeners, "NAME\tPROTOCOL\tADDRESS\tPORT\n");
-                    sprintf(listeners + strlen(listeners), "====\t========\t=======\t====\n");
-                    sprintf(listeners + strlen(listeners), "Default\tHTTP\t\t%s\t%d", IP, HTTP_PORT);
+                    sprintf(listeners, "ID\tPROTOCOL\tADDRESS\tPORT\n");
+                    sprintf(listeners + strlen(listeners), "==\t========\t=======\t====\n");
+                    for (int i = 0; i < listener_num; i++) {
+                        sprintf(listeners + strlen(listeners), "%d\t%s\t\t%s\t%d\n", listener[i].id, listener[i].protocol, listener[i].address, listener[i].port);
+                    }
                     strcpy(response, listeners);
                 }
 
                 if (send(tcp_accept, response, sizeof(response), 0) == -1)
                     error("Error sending response");
 
-                if (http_listener_on) {
-                    http_listener(tcp_socket, tcp_accept);
+                if (start_http_listener_on) {
+                    start_http_listener(tcp_socket, tcp_accept);
                 }
             }
             close(tcp_accept);
@@ -127,7 +146,18 @@ int main() {
     }
 }
 
-int http_listener(int tcp_socket, int tcp_accept) {
+void craft_http_listener(char *request, struct http_listener *listener, int id, int listener_num) {
+    char *protocol = strtok(request, " ");
+    char *address = strtok(NULL, " ");
+    char *port_string = strtok(NULL, "\n");
+
+    listener->id = id;
+    strcpy(listener->protocol, protocol);
+    strcpy(listener->address, address);
+    listener->port = atoi(port_string);
+}
+
+int start_http_listener(int tcp_socket, int tcp_accept) {
     //http socket
     int http_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (http_socket == -1)
@@ -166,7 +196,7 @@ int http_listener(int tcp_socket, int tcp_accept) {
 }
 
 /*void http_interact(int tcp_socket, int tcp_accept, int http_socket) {
-    //while http_listener_on
+    //while start_http_listener_on
     while (1) {
         //accept http
         puts("Accepting...");
@@ -217,3 +247,4 @@ int http_listener(int tcp_socket, int tcp_accept) {
         }
     }
 }*/
+
