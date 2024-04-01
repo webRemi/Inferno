@@ -27,7 +27,7 @@ void error(char *message) {
 
 void craft_http_listener(char *request, struct http_listener *listener, int listener_id, int listener_num);
 
-int start_http_listener(int tcp_socket, int tcp_accept);
+int start_http_listener(int tcp_socket, int tcp_accept, struct http_listener *listener);
 
 //void http_interact(int tcp_socket, int http_socket);
 
@@ -94,9 +94,9 @@ int main() {
                     if (listener_id == MAX_LISTENERS)
                         printf("Sorry no more than %s listeners allowed", MAX_LISTENERS);
                     craft_http_listener(request, &listener[listener_num], listener_id, listener_num);
+                    int http_socket = start_http_listener(tcp_socket, tcp_accept, &listener[listener_num]);
                     listener_id++;
                     listener_num++;
-                    int http_socket = start_http_listener(tcp_socket, tcp_accept);
                     pid_t http_child_pid = fork();
                     if (http_child_pid == 0) {
                         int http_accept;
@@ -133,9 +133,6 @@ int main() {
                 if (send(tcp_accept, response, sizeof(response), 0) == -1)
                     error("Error sending response");
 
-                if (start_http_listener_on) {
-                    start_http_listener(tcp_socket, tcp_accept);
-                }
             }
             close(tcp_accept);
             exit(EXIT_SUCCESS);
@@ -157,7 +154,7 @@ void craft_http_listener(char *request, struct http_listener *listener, int id, 
     listener->port = atoi(port_string);
 }
 
-int start_http_listener(int tcp_socket, int tcp_accept) {
+int start_http_listener(int tcp_socket, int tcp_accept, struct http_listener *listener) {
     //http socket
     int http_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (http_socket == -1)
@@ -170,8 +167,8 @@ int start_http_listener(int tcp_socket, int tcp_accept) {
     struct sockaddr_in http_address;
     memset(&http_address, 0, sizeof(http_address));
     http_address.sin_family = AF_INET;
-    http_address.sin_port = htons(HTTP_PORT);
-    http_address.sin_addr.s_addr = inet_addr(IP);
+    http_address.sin_port = htons(listener->port);
+    http_address.sin_addr.s_addr = inet_addr(listener->address);
     puts("HTTP listener initialized");
 
     //reuse http
