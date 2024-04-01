@@ -9,7 +9,6 @@
 #include <arpa/inet.h>
 #define IP "127.0.0.1"
 #define TCP_PORT 33333
-#define HTTP_PORT 80
 #define MAX_LISTENERS 10
 
 struct http_listener {
@@ -25,8 +24,10 @@ void error(char *message) {
     exit(EXIT_FAILURE);
 }
 
+//craft the http listeners
 void craft_http_listener(char *request, struct http_listener *listener, int listener_id, int listener_num);
 
+//start the http listeners
 int start_http_listener(int tcp_socket, int tcp_accept, struct http_listener *listener);
 
 //void http_interact(int tcp_socket, int http_socket);
@@ -35,7 +36,7 @@ int main() {
     struct http_listener listener[MAX_LISTENERS] = {0};
     int listener_id = 1;
     int listener_num = 0;
-    int start_http_listener_on = 0;
+
     //socket tcp
     puts("Initializing socket...");
     int tcp_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -50,11 +51,11 @@ int main() {
     tcp_address.sin_addr.s_addr = inet_addr(IP);
 
     int tcp_reuse = 1;
-    //reuse address
+    //reuse address tcp
     if (setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEADDR, &tcp_reuse, sizeof(tcp_reuse)) == -1)
         error("Error reusing tcp address");
 
-    //reuse port
+    //reuse port tcp
     if (setsockopt(tcp_socket, SOL_SOCKET, SO_REUSEPORT, &tcp_reuse, sizeof(tcp_reuse)) == -1)
         perror("Error reusing tcp port");
 
@@ -80,16 +81,18 @@ int main() {
 
         if (tcp_child_pid == 0) {
             while(1) {
-                //child process
+                //child tcp
                 close(tcp_socket);
 
-                //work
+                /*==========PROCESS TCP==========*/
+
                 //read request
                 char request[1024];
                 if (recv(tcp_accept, request, sizeof(request), 0) == -1)
                     error("Error receiving request");
                 printf("Request: %s\n", request);
 
+                //watch for listeners
                 if (strncmp(request, "http ", 5) == 0) {
                     if (listener_id == MAX_LISTENERS)
                         printf("Sorry no more than %s listeners allowed", MAX_LISTENERS);
@@ -98,8 +101,9 @@ int main() {
                     listener_id++;
                     listener_num++;
                     pid_t http_child_pid = fork();
+                    int http_accept;
                     if (http_child_pid == 0) {
-                        int http_accept;
+                        //child http
                         while(1) {
                             http_accept = accept(http_socket, NULL, NULL);
                             if (http_accept == -1)
@@ -108,12 +112,14 @@ int main() {
 
                             while(1) {
                                 close(http_socket);
-                                //process
+                                /*==========PROCESS HTTP==========*/
                             }
                         }
                         close(http_accept);
                         exit(EXIT_SUCCESS);
                     } else {
+                        //parent http
+                        close(http_accept);
                     }
                 }
 
@@ -137,7 +143,7 @@ int main() {
             close(tcp_accept);
             exit(EXIT_SUCCESS);
         } else {
-            //parent process
+            //parent tcp
             close(tcp_accept);
         }
     }
@@ -155,13 +161,11 @@ void craft_http_listener(char *request, struct http_listener *listener, int id, 
 }
 
 int start_http_listener(int tcp_socket, int tcp_accept, struct http_listener *listener) {
-    //http socket
+    //socket http
+    puts("Initializing http listener...");
     int http_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (http_socket == -1)
         error("HTTP socket creation failed");
-
-    //socket http
-    puts("Initializing http listener...");
 
     //preparing http address
     struct sockaddr_in http_address;

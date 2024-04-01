@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define IP "127.0.0.1"
-#define PORT_HTTP 80
+#define PORT_HTTP 8000
 
 //handle erros
 void error(char *message) {
