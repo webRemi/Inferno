@@ -329,6 +329,8 @@ void *process_http_thread(void *args) {
          if (strcmp(request_tcp, "exit") == 0) {
              puts("exited");
              targs->selected_session = NULL;
+             targs->http_accept = http_accept;
+             targs->tcp_accept = tcp_accept;
              break;
          }
 
@@ -345,8 +347,8 @@ void *process_http_thread(void *args) {
           if (send(tcp_accept, response_http, sizeof(response_http), 0) == -1)
               error("Error sending to client");
      }
-     close(http_accept);
-     pthread_exit(NULL);
+     //close(http_accept);
+     //pthread_exit(NULL);
 }
 
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num) {
