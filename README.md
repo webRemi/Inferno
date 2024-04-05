@@ -155,7 +155,7 @@ Closing c2 and exiting...
 > [!CAUTION]
 > Be careful to always having server running before start the client
 
-> [!INFO]
+> [!NOTE]
 > Readme not updated to latest
 
 ## Infos
