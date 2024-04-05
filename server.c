@@ -35,6 +35,7 @@ struct thread_shared_data {
     int listener_num;
     int session_id;
     int session_num;
+    int tcp_socket;
     int tcp_accept;
     int http_socket;
     int http_accept;
@@ -46,7 +47,9 @@ void error(char *message) {
     exit(EXIT_FAILURE);
 }
 
-void *tcp_thread(void *args);
+void *accept_tcp_thread(void *args);
+
+void *process_tcp_thread(void *args);
 
 void *accept_http_thread(void *args);
 
@@ -60,9 +63,10 @@ void craft_http_session(struct http_listener *listener, struct http_session *ses
 
 int main() {
     struct http_listener listener[MAX_LISTENERS] = {0};
-    struct http_session session[MAX_SESSIONS] = {0};
     int listener_id = 1;
     int listener_num = 0;
+
+    struct http_session session[MAX_SESSIONS] = {0};
     int session_id = 1;
     int session_num = 0;
 
@@ -102,7 +106,34 @@ int main() {
     if (listen(tcp_socket, 0) == -1)
         error("Listening failed");
 
+   args->listener = listener;
+   args->listener_id = listener_id;
+   args->listener_num = listener_num;
+   args->session = session;
+   args->session_id = session_id;
+   args->session_num = session_num;
+   args->tcp_socket = tcp_socket;
+
+   pthread_t accept_tcp_thread_id;
+   pthread_create(&accept_tcp_thread_id, NULL, accept_tcp_thread, (void *)args);
+
+   while(1);
+
+   free(args);
+}
+
+void *accept_tcp_thread(void *args) {
+    struct thread_shared_data *targs = (struct thread_shared_data *)args;
+    int tcp_socket = targs->tcp_socket;
+
     while(1) {
+        struct http_session *session = targs->session;
+        struct http_listener *listener = targs->listener;
+        int listener_id = targs->listener_id;
+        int listener_num = targs->listener_num;
+        int session_id = targs->session_id;
+        int session_num = targs->session_num;
+
         //accept tcp
         puts("Accepting...");
         int tcp_accept = accept(tcp_socket, NULL, NULL);
@@ -110,22 +141,21 @@ int main() {
             error("Accepting failed");
         puts("Client connected");
 
-        args->session = session;
-        args->listener = listener;
-        args->listener_num = listener_num;
-        args->listener_id = listener_id;
-        args->tcp_accept = tcp_accept;
-        args->session_num = session_num;
-        args->session_id = session_id;
+        targs->tcp_accept = tcp_accept;
+        targs->listener = listener;
+        targs->session = session;
+        targs->session_id = session_id;
+        targs->session_num = session_num;
+        targs->listener_id = listener_id;
+        targs->listener_num = listener_num;
 
-        pthread_t thread_tcp;
-        pthread_create(&thread_tcp, NULL, tcp_thread, (void *)args);
+        pthread_t process_tcp_thread_id;
+        pthread_create(&process_tcp_thread_id, NULL, process_tcp_thread, (void *)args);
     }
     close(tcp_socket);
-    free(args);
 }
 
-void *tcp_thread(void *args) {
+void *process_tcp_thread(void *args) {
     struct thread_shared_data *targs = (struct thread_shared_data *)args;
     int tcp_accept = targs->tcp_accept;
 
@@ -135,11 +165,10 @@ void *tcp_thread(void *args) {
             continue;
         }
 
-        struct http_session *session = targs->session;
         struct http_listener *listener = targs->listener;
-        int tcp_accept = targs->tcp_accept;
         int listener_id = targs->listener_id;
         int listener_num = targs->listener_num;
+        struct http_session *session = targs->session;
         int session_id = targs->session_id;
         int session_num = targs->session_num;
         int http_accept = targs->http_accept;
@@ -159,9 +188,9 @@ void *tcp_thread(void *args) {
             listener_num++;
 
             targs->listener = listener;
-            targs->session = session;
             targs->session_id = session_id;
             targs->session_num = session_num;
+            targs->session = session;
             targs->listener_id = listener_id;
             targs->listener_num = listener_num;
             targs->http_socket = http_socket;
@@ -207,9 +236,9 @@ void *tcp_thread(void *args) {
                  }
             }
             if (selected_session != NULL) {
+                targs->tcp_accept = tcp_accept;
                 targs->http_accept = http_accept;
                 targs->selected_session = selected_session;
-                targs->tcp_accept = tcp_accept;
             }
 
             strcpy(response, "XXX");
@@ -279,12 +308,12 @@ void *accept_http_thread(void *args) {
     int http_socket = targs->http_socket;
 
     while (1) {
-        struct http_session *session = targs->session;
         struct http_listener *listener = targs->listener;
+        int listener_id = targs->listener_id;
+        int listener_num = targs->listener_num;
+        struct http_session *session = targs->session;
         int session_id = targs->session_id;
         int session_num = targs->session_num;
-        int listener_num = targs->listener_num;
-        int listener_id = targs->listener_id;
 
         //accept http
         puts("Accepting...");
@@ -297,15 +326,15 @@ void *accept_http_thread(void *args) {
             printf("Sorry no more than %s sessions allowed", MAX_SESSIONS);
         session_id++;
         session_num++;
-        targs->session = session;
+
         targs->listener = listener;
-        targs->http_socket = http_socket;
-        targs->session_id = session_id;
-        targs->session_num = session_num;
         targs->listener_id = listener_id;
         targs->listener_num = listener_num;
+        targs->session = session;
+        targs->session_id = session_id;
+        targs->session_num = session_num;
+        targs->http_socket = http_socket;
         targs->http_accept = http_accept;
-
     }
     close(http_socket);
     pthread_exit(NULL);
@@ -313,8 +342,8 @@ void *accept_http_thread(void *args) {
 
 void *process_http_thread(void *args) {
      struct thread_shared_data *targs = (struct thread_shared_data *)args;
-     int http_accept = targs->http_accept;
      int tcp_accept = targs->tcp_accept;
+     int http_accept = targs->http_accept;
      while (1) {
          //receive client
          char request_tcp[1024];
@@ -329,8 +358,8 @@ void *process_http_thread(void *args) {
          if (strcmp(request_tcp, "exit") == 0) {
              puts("exited");
              targs->selected_session = NULL;
-             targs->http_accept = http_accept;
              targs->tcp_accept = tcp_accept;
+             targs->http_accept = http_accept;
              break;
          }
 
@@ -347,8 +376,8 @@ void *process_http_thread(void *args) {
           if (send(tcp_accept, response_http, sizeof(response_http), 0) == -1)
               error("Error sending to client");
      }
-     //close(http_accept);
-     //pthread_exit(NULL);
+     //close(http_accept); -> close only if we destroy session
+     //pthread_exit(NULL); -> kill thread only if we destroy session
 }
 
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num) {
