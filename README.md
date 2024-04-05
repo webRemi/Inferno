@@ -2,28 +2,34 @@
 ![Inferno Logo](/assets/images/Inferno.png)
 
 ## Note
-"In honor of Dennis Ritchie's legacy, may Inferno serve as a beacon of ingenuity and collaboration, embodying the spirit of exploration and advancement in the realm of technology."
+"Exploring the digital realm through C feels like journeying through the fiery depths of Inferno with nothing but a trusty torch in hand. It's not just coding; it's an adventure, where every line of C unlocks a new door to discovery in the digital underworld."
 
 ## Cortex Security (CS) C2
 * Client/Server channel over TCP
 * Server/Agent channel over HTTP
-* Starting HTTP listener
-* Entering session
+* Listing HTTP listeners
+* Starting HTTP listeners
+* Listing sessions
+* Selecting sessions
+* Switching sessions
 
 ## Architecture
 ![Inferno Architecture](/assets/images/architecture.png)
 
 ### Supported commands
-| Mode | Command | Description
-| ---  | --- | --- |
-| HTTP listener | http | Start an HTTP listener |
-| ENTER | enter | Enter inside session |
+| Mode | Command | Example | Description |
+| ---  | --- | --- | --- |
+| HTTP listener | http | http 127.0.0.1 80 | Start an HTTP listener |
+| ENTER | enter | enter 1 | Enter inside session |
 
 ### Supported agent commands
 | Mode | Command | Description
 | --- | --- | --- |
 | WHOAMI | whoami | Get user login |
 | HOSTNAME | hostname | Get machine hostname |
+| LIST | ls | List files |
+| DIRECTORY | pwd | Print current directory
+> Some commands can be run with arguments 
 
 ## Manual
 
@@ -38,6 +44,7 @@ gcc server.c -o server
 ```bash
 gcc devil-lin.c -o devil-lin
 ```
+> More devil-lin with different ports 80, 8080, 8000 etc
 
 ### Utilisation instructions
 First you will need to start the server
@@ -146,16 +153,10 @@ Closing c2 and exiting...
 
 ## Drawbacks
 > [!CAUTION]
-> If you receive a segfault while launching client its cause a bug can make the server not started the port 80
-
-> [!CAUTION]
-> If one of the three composant of the C2 e.g. client/server/agent loose connection, the C2 will no more work and you need close all program and restart C2
-
-> [!CAUTION]
 > Be careful to always having server running before start the client
 
-> [!CAUTION]
-> Be careful to always having listener ready before starting the agent
+> [!INFO]
+> Readme not updated to latest
 
 ## Infos
 > [!TIP]
