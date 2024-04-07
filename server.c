@@ -26,6 +26,7 @@ struct http_session {
     char protocol[20];
     char address[20];
     int port;
+    int http_accept;
 };
 
 struct thread_shared_data {
@@ -232,15 +233,19 @@ void *process_tcp_thread(void *args) {
             int session_selected = atoi(session_number);
 
             struct http_session *selected_session = NULL;
+            printf("Debug: session_num: %d\n", session_num);
             for (int i = 0; i < session_num; i++) {
                  if (session[i].id == session_selected) {
+                     printf("Debug: Session id: %d\n", session[i].id);
+                     printf("Debug: Session_selected: %d\n", session_selected);
                      selected_session = &session[i];
+                     printf("Debug: Selected port number: %d\n", selected_session->port);
                      break;
                  }
             }
-            if (selected_session != NULL) {
-                targs->tcp_accept = tcp_accept;
-                targs->http_accept = http_accept;
+            targs->selected_session = selected_session;
+            if (targs->selected_session != NULL) {
+                puts("Debug: selected session is not null");
                 targs->selected_session = selected_session;
             }
 
@@ -329,8 +334,9 @@ void *accept_http_thread(void *args) {
     	puts("Agent connected");
 
         int used_listener_id = -1;
-        for (int i = 0; i < listener_num; ++i) {
+        for (int i = 0; i < listener_num; i++) {
             if (http_socket == listener[i].socket) {
+                printf("listener socket: %d\n", listener[i].port);
                 used_listener_id = listener[i].id;
                 //break;
             }
@@ -338,6 +344,7 @@ void *accept_http_thread(void *args) {
         session_id = targs->session_id;
         session_num = targs->session_num;
         printf("Listener used was: %d\n", used_listener_id);
+        printf("Before assigning socket: session_num: %d, session_id: %d, session_num - 1: %d\n", session_num, session_id, session_num - 1);
         craft_http_session(&listener[used_listener_id - 1], &session[session_num], session_id, session_num);
         if (session_id == MAX_SESSIONS)
             printf("Sorry no more than %s sessions allowed", MAX_SESSIONS);
@@ -353,7 +360,7 @@ void *accept_http_thread(void *args) {
         targs->session_id = session_id;
         targs->session_num = session_num;
         targs->http_socket = http_socket;
-        targs->http_accept = http_accept;
+        targs->session[session_num -1].http_accept = http_accept;
     }
     close(http_socket);
     pthread_exit(NULL);
@@ -362,7 +369,7 @@ void *accept_http_thread(void *args) {
 void *process_http_thread(void *args) {
      struct thread_shared_data *targs = (struct thread_shared_data *)args;
      int tcp_accept = targs->tcp_accept;
-     int http_accept = targs->http_accept;
+     int http_accept = targs->selected_session->http_accept;
      while (1) {
          //receive client
          char request_tcp[1024];
@@ -378,7 +385,6 @@ void *process_http_thread(void *args) {
              puts("exited");
              targs->selected_session = NULL;
              targs->tcp_accept = tcp_accept;
-             targs->http_accept = http_accept;
              break;
          }
 
@@ -396,7 +402,7 @@ void *process_http_thread(void *args) {
               error("Error sending to client");
      }
      //close(http_accept); -> close only if we destroy session
-     //pthread_exit(NULL); -> kill thread only if we destroy session
+     //pthread_exit(NULL);
 }
 
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num) {
