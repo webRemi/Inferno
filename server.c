@@ -18,6 +18,7 @@ struct http_listener {
     char protocol[20];
     char address[20];
     int port;
+    int socket;
 };
 
 struct http_session {
@@ -184,8 +185,8 @@ void *process_tcp_thread(void *args) {
                 printf("Sorry no more than %s listeners allowed", MAX_LISTENERS);
             craft_http_listener(request, &listener[listener_num], listener_id, listener_num);
             int http_socket = start_http_listener(&listener[listener_num]); 
-            listener_id++;
             listener_num++;
+            listener_id++;
 
             targs->listener = listener;
             targs->session_id = session_id;
@@ -213,6 +214,7 @@ void *process_tcp_thread(void *args) {
 
         else if (strcmp(request, "sessions") == 0) {
             int session_num = targs->session_num;
+            int session_id = targs->session_id;
 
             char sessions[1024];
             sprintf(sessions, "ID\tCOMMUNICATION\tREMOTE ADDRESS\n");
@@ -225,6 +227,7 @@ void *process_tcp_thread(void *args) {
         }
 
         else if (strncmp(request, "enter ", 6) == 0) {
+            int session_num = targs->session_num;
             char *session_number = strtok(request + 6, " ");
             int session_selected = atoi(session_number);
 
@@ -300,6 +303,8 @@ int start_http_listener(struct http_listener *listener) {
     if (listen(http_socket, 0) == -1)
         error("Failed listening");
 
+    listener->socket = http_socket;
+
     return http_socket;
 }
 
@@ -314,6 +319,7 @@ void *accept_http_thread(void *args) {
         struct http_session *session = targs->session;
         int session_id = targs->session_id;
         int session_num = targs->session_num;
+        int id = targs->listener->id;
 
         //accept http
         puts("Accepting...");
@@ -321,11 +327,24 @@ void *accept_http_thread(void *args) {
     	if (http_accept == -1)
             error("Accepting failed");
     	puts("Agent connected");
-        craft_http_session(&listener[listener_num - 1], &session[session_num], session_id, session_num);
+
+        int used_listener_id = -1;
+        for (int i = 0; i < listener_num; ++i) {
+            if (http_socket == listener[i].socket) {
+                used_listener_id = listener[i].id;
+                //break;
+            }
+        }
+        session_id = targs->session_id;
+        session_num = targs->session_num;
+        printf("Listener used was: %d\n", used_listener_id);
+        craft_http_session(&listener[used_listener_id - 1], &session[session_num], session_id, session_num);
         if (session_id == MAX_SESSIONS)
             printf("Sorry no more than %s sessions allowed", MAX_SESSIONS);
         session_id++;
         session_num++;
+        printf("upgraded session number, session_id: %d\n", session_id);
+        printf("session_num: %d\n", session_num);
 
         targs->listener = listener;
         targs->listener_id = listener_id;
