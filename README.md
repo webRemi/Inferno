@@ -9,6 +9,7 @@
 * Server/Agent channel over HTTP
 * Listing HTTP listeners
 * Starting HTTP listeners
+* Stopping HTTP listeners
 * Listing sessions
 * Selecting sessions
 * Switching sessions
@@ -20,7 +21,8 @@
 | Mode | Command | Example | Description |
 | ---  | --- | --- | --- |
 | HTTP listener | http | http 127.0.0.1 80 | Start an HTTP listener |
-| ENTER | enter | enter 1 | Enter inside session |
+| STOP listener | stop | stop http 1 | Stop listener HTTP with ID 1 |
+| ENTER | enter | enter 1 | Enter inside session with ID 1|
 
 ### Supported agent commands
 | Mode | Command | Description
