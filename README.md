@@ -22,11 +22,11 @@
 | Mode | Command | Example | Description |
 | ---  | --- | --- | --- |
 | LIST listeners | listeners | / | list actives listeners |
-| HTTP listener | http | http 127.0.0.1 80 | Start an HTTP listener |
+| START listener | http | http 127.0.0.1 80 | Start an HTTP listener |
 | STOP listener | stop | stop http 1 | Stop listener HTTP with ID 1 |
 | LIST sessions | sessions | / | list actives sessions
-| ENTER | enter | enter 1 | Enter inside session with ID 1 |
-| DESTROY | kill | kill 1 | Destroy session with ID 1 |
+| ENTER session | enter | enter 1 | Enter inside session with ID 1 |
+| DESTROY session | kill | kill 1 | Destroy session with ID 1 |
 
 ### Supported agent commands
 | Mode | Command | Description
