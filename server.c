@@ -63,6 +63,8 @@ int start_http_listener(struct http_listener *listener);
 
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num);
 
+void stop_http_listener(char *request, struct http_listener *listener);
+
 int main() {
     struct http_listener listener[MAX_LISTENERS] = {0};
     int listener_id = 1;
@@ -137,7 +139,7 @@ void *accept_tcp_thread(void *args) {
         int session_num = targs->session_num;
 
         //accept tcp
-        puts("Accepting...");
+        puts("Accepting client...");
         int tcp_accept = accept(tcp_socket, NULL, NULL);
         if (tcp_accept == -1)
             error("Accepting failed");
@@ -208,6 +210,8 @@ void *process_tcp_thread(void *args) {
             sprintf(listeners, "ID\tPROTOCOL\tADDRESS\tPORT\n");
             sprintf(listeners + strlen(listeners), "==\t========\t=======\t====\n");
             for (int i = 0; i < listener_num; i++) {
+                if (listener[i].id == -1)
+                    continue;
                 sprintf(listeners + strlen(listeners), "%d\t%s\t\t%s\t%d\n", listener[i].id, listener[i].protocol, listener[i].address, listener[i].port);
             }
             strcpy(response, listeners);
@@ -253,6 +257,11 @@ void *process_tcp_thread(void *args) {
 
             pthread_t process_http_thread_id;
             pthread_create(&process_http_thread_id, NULL, process_http_thread, (void *)targs);
+        }
+
+        else if (strncmp(request, "stop http ", 10) == 0) {
+            stop_http_listener(request, listener);
+            targs->listener = listener;
         }
 
         //send response
@@ -310,13 +319,15 @@ int start_http_listener(struct http_listener *listener) {
 
     listener->socket = http_socket;
 
+    printf("Started listener with socket n*: %d\n", listener->socket);
+
     return http_socket;
 }
 
 void *accept_http_thread(void *args) {
     struct thread_shared_data *targs = (struct thread_shared_data *)args;
     int http_socket = targs->http_socket;
-
+    int testing = 0;
     while (1) {
         struct http_listener *listener = targs->listener;
         int listener_id = targs->listener_id;
@@ -327,12 +338,12 @@ void *accept_http_thread(void *args) {
         int id = targs->listener->id;
 
         //accept http
-        puts("Accepting...");
+        puts("Accepting agent...");
         int http_accept = accept(http_socket, NULL, NULL);
-    	if (http_accept == -1)
-            error("Accepting failed");
-    	puts("Agent connected");
-
+        if (listener[listener_num - 1].id == -1) {
+            puts("Listener stoped");
+            break;
+        }
         int used_listener_id = -1;
         for (int i = 0; i < listener_num; i++) {
             if (http_socket == listener[i].socket) {
@@ -406,9 +417,20 @@ void *process_http_thread(void *args) {
 }
 
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num) {
-    puts("inside craft");
     session->id = session_id;
     strcpy(session->protocol, listener->protocol);
     strcpy(session->address, listener->address);
     session->port = listener->port;
+}
+
+void stop_http_listener(char *request, struct http_listener *listener) {
+    char *extract = strstr(request, "stop http ");
+    extract += strlen("stop http ");
+    char *stoped_string = strtok(extract, "\n");
+    int stoped_id = atoi(stoped_string);
+    printf("Stoped listener n*: %d\n", stoped_id);
+
+    listener[stoped_id - 1].id = -1;
+    shutdown(listener[stoped_id - 1].socket, SHUT_RD);
+    close(listener[stoped_id - 1].socket);
 }

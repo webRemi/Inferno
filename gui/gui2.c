@@ -23,20 +23,40 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *grid;
     GtkWidget *button;
     GtkWidget *image;
+    GtkWidget *entryIp;
+    GtkWidget *entryPort;
+    GtkWidget *entryOperator;
+    GtkWidget *textIp;
+    GtkTextBuffer *bufferIp;
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Inferno C2");
-    gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
+    gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
 
     grid = gtk_grid_new ();
     gtk_window_set_child (GTK_WINDOW (window), grid);
 
-    button = gtk_button_new_with_label("Hello World");
+    button = gtk_button_new_with_label("Enter");
     g_signal_connect(button, "clicked", G_CALLBACK(print_hello), NULL);
-    gtk_grid_attach (GTK_GRID (grid), button, 0, 0, 1, 3);
+    gtk_grid_attach (GTK_GRID (grid), button, 1, 4, 1, 1);
 
-    image = gtk_image_new_from_file("assets/images/Inferno.png");
-    gtk_grid_attach (GTK_GRID (grid), image, 0, 1, 2, 1);
+    //image = gtk_image_new_from_file("../assets/images/Inferno.png");
+    //gtk_grid_attach (GTK_GRID (grid), image, 0, 0, 2, 2);
+
+    entryIp = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID (grid), entryIp, 1, 1, 1, 1);
+
+    entryPort = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID (grid), entryPort, 1, 2, 1, 1);
+
+    entryOperator = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID (grid), entryOperator, 1, 3, 1, 1);
+
+    textIp = gtk_text_view_new();
+    bufferIp = gtk_text_view_get_buffer (GTK_TEXT_VIEW (textIp));
+    gtk_text_buffer_set_text (bufferIp, "Hello, this is some text", -1);
+    gtk_grid_attach(GTK_GRID(grid), textIp, 0, 0, 1, 1);
+
 
     gtk_window_present(GTK_WINDOW(window));
 }
