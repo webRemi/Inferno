@@ -61,9 +61,11 @@ void craft_http_listener(char *request, struct http_listener *listener, int list
 
 int start_http_listener(struct http_listener *listener);
 
+void stop_http_listener(char *request, struct http_listener *listener);
+
 void craft_http_session(struct http_listener *listener, struct http_session *session, int session_id, int session_num);
 
-void stop_http_listener(char *request, struct http_listener *listener);
+void destroy_http_session(char *request, struct http_session *session);
 
 int main() {
     struct http_listener listener[MAX_LISTENERS] = {0};
@@ -226,6 +228,8 @@ void *process_tcp_thread(void *args) {
             sprintf(sessions + strlen(sessions), "==\t=============\t===========\n");
             printf("session_num outside: %d\n", session_num);
             for (int i = 0; i < session_num; i++) {
+                if (session[i].id == -1)
+                    continue;
                 sprintf(sessions + strlen(sessions), "%d\t%s\t%s\t%d\n", session[i].id, session[i].protocol, session[i].address, session[i].port);
             }
             strcpy(response, sessions);
@@ -262,6 +266,11 @@ void *process_tcp_thread(void *args) {
         else if (strncmp(request, "stop http ", 10) == 0) {
             stop_http_listener(request, listener);
             targs->listener = listener;
+        }
+
+        else if (strncmp(request, "kill ", 5) == 0) {
+            destroy_http_session(request, session);
+            targs->session = session;
         }
 
         //send response
@@ -327,7 +336,7 @@ int start_http_listener(struct http_listener *listener) {
 void *accept_http_thread(void *args) {
     struct thread_shared_data *targs = (struct thread_shared_data *)args;
     int http_socket = targs->http_socket;
-    int testing = 0;
+
     while (1) {
         struct http_listener *listener = targs->listener;
         int listener_id = targs->listener_id;
@@ -381,6 +390,7 @@ void *process_http_thread(void *args) {
      struct thread_shared_data *targs = (struct thread_shared_data *)args;
      int tcp_accept = targs->tcp_accept;
      int http_accept = targs->selected_session->http_accept;
+
      while (1) {
          //receive client
          char request_tcp[1024];
@@ -433,4 +443,15 @@ void stop_http_listener(char *request, struct http_listener *listener) {
     listener[stoped_id - 1].id = -1;
     shutdown(listener[stoped_id - 1].socket, SHUT_RD);
     close(listener[stoped_id - 1].socket);
+}
+
+void destroy_http_session(char *request, struct http_session *session) {
+    char *extract = strstr(request, "kill ");
+    extract += strlen("kill ");
+    char *killed_string = strtok(extract, "\n");
+    int killed_id = atoi(killed_string);
+    printf("Destroyed session n*: %d\n", killed_id);
+
+    session[killed_id - 1].id = -1;
+    close(session[killed_id -1].http_accept);
 }
