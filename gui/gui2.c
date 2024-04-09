@@ -23,11 +23,18 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *grid;
     GtkWidget *button;
     GtkWidget *image;
-    GtkWidget *entryIp;
+
+    GtkWidget *entryAddress;
+    GtkWidget *textAddress;
+
     GtkWidget *entryPort;
+    GtkWidget *textPort;
+
     GtkWidget *entryOperator;
-    GtkWidget *textIp;
-    GtkTextBuffer *bufferIp;
+    GtkWidget *textOperator;
+
+    GtkWidget *entryPassword;
+    GtkWidget *textPassword;
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Inferno C2");
@@ -43,20 +50,25 @@ static void activate(GtkApplication *app, gpointer user_data) {
     //image = gtk_image_new_from_file("../assets/images/Inferno.png");
     //gtk_grid_attach (GTK_GRID (grid), image, 0, 0, 2, 2);
 
-    entryIp = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID (grid), entryIp, 1, 1, 1, 1);
+    entryAddress = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID (grid), entryAddress, 1, 1, 1, 1);
+    textAddress = gtk_label_new("Address");
+    gtk_grid_attach(GTK_GRID(grid), textAddress, 0, 1, 1, 1);
 
     entryPort = gtk_entry_new();
     gtk_grid_attach(GTK_GRID (grid), entryPort, 1, 2, 1, 1);
+    textPort = gtk_label_new("Port");
+    gtk_grid_attach(GTK_GRID(grid), textPort, 0, 2, 1, 1);
 
     entryOperator = gtk_entry_new();
     gtk_grid_attach(GTK_GRID (grid), entryOperator, 1, 3, 1, 1);
+    textOperator = gtk_label_new("Operator");
+    gtk_grid_attach(GTK_GRID(grid), textOperator, 0, 3, 1, 1);
 
-    textIp = gtk_text_view_new();
-    bufferIp = gtk_text_view_get_buffer (GTK_TEXT_VIEW (textIp));
-    gtk_text_buffer_set_text (bufferIp, "Hello, this is some text", -1);
-    gtk_grid_attach(GTK_GRID(grid), textIp, 0, 0, 1, 1);
-
+    entryPassword = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(grid), entryPassword, 1, 4, 1, 1);
+    textPassword = gtk_label_new("Password");
+    gtk_grid_attach(GTK_GRID(grid), textPassword, 0, 4, 1, 1);
 
     gtk_window_present(GTK_WINDOW(window));
 }

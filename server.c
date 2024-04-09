@@ -67,6 +67,8 @@ void craft_http_session(struct http_listener *listener, struct http_session *ses
 
 void destroy_http_session(char *request, struct http_session *session);
 
+//void generate_http_agent(char *request);
+
 int main() {
     struct http_listener listener[MAX_LISTENERS] = {0};
     int listener_id = 1;
@@ -272,6 +274,9 @@ void *process_tcp_thread(void *args) {
             destroy_http_session(request, session);
             targs->session = session;
         }
+        else if (strncmp(request, "generate ", 9) == 0) {
+            //generate_http_agent(request);
+        }
 
         //send response
         if (send(tcp_accept, response, sizeof(response), 0) == -1)
@@ -455,3 +460,40 @@ void destroy_http_session(char *request, struct http_session *session) {
     session[killed_id - 1].id = -1;
     close(session[killed_id -1].http_accept);
 }
+
+/*void generate_http_agent(char *request) {
+    char *extract = strstr(request, "generate ");
+    extract += strlen("generate ");
+    char *agent = strtok(extract, " ");
+    char *protocol = strtok(NULL, " ");
+    char *address = strtok(NULL, " ");
+    char *port_string = strtok(NULL, " ");
+    char *os = strtok(NULL, "\n");
+    int port = atoi(port_string);
+
+    printf("agent: %s\n", agent);
+    printf("protocol: %s\n", protocol);
+    printf("address: %s\n", address);
+    printf("port: %d\n", port);
+    printf("os: %s\n", os);
+
+    FILE *fptr;
+    char file[4096];
+    fptr = fopen("devil-lin.c", "r+");
+    if (fptr == NULL) 
+        error("Error opening file");
+    puts("file open");
+
+    size_t file_length = fread(file, 1, sizeof(file), fptr);
+    char *extract_ip = strstr(file, "#define IP ");
+            extract_ip += strlen("#define IP ");
+            char *ip = strtok(extract_ip, "\n");
+            printf("Extracted ip is: %s\n", ip);
+
+            char *replace_ip = "fjk;lasjf;lksajf;lks\"\n";
+            strncpy(extract_ip, replace_ip, strlen(replace_ip));
+            memset(extract_ip + strlen(replace_ip), ' ', strlen(extract_ip) - strlen(ip));
+            fseek(fptr, 0, SEEK_SET);
+            fwrite(file, 1, file_length, fptr);
+    fclose(fptr);
+}*/
