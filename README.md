@@ -23,16 +23,19 @@
 ### Supported commands
 | Mode | Command | Example | Description |
 | ---  | --- | --- | --- |
-| LIST listeners | listeners | / | list actives listeners |
+| HELP | help | / | Show help menu |
+| EXIT | exit | / | Exit C2 |
+| LIST listeners | listeners | / | List actives listeners |
 | START listener | http | http 127.0.0.1 80 | Start an HTTP listener |
 | STOP listener | stop | stop http 1 | Stop listener HTTP with ID 1 |
-| LIST sessions | sessions | / | list actives sessions
+| LIST sessions | sessions | / | List actives sessions
 | ENTER session | enter | enter 1 | Enter inside session with ID 1 |
 | DESTROY session | kill | kill 1 | Destroy session with ID 1 |
 
-### Supported agent commands
+### Supported session commands
 | Mode | Command | Description
 | --- | --- | --- |
+| EXIT | exit | Exit session |
 | WHOAMI | whoami | Get user login |
 | HOSTNAME | hostname | Get machine hostname |
 | LIST | ls | List files |
