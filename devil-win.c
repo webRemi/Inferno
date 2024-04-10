@@ -47,8 +47,10 @@ int main() {
      while (1) {
         //receiving http payload
         char receive[1024];
-        if(recv(inferno_socket, receive, sizeof(receive), 0) < 0)
+        if (recv(inferno_socket, receive, sizeof(receive), 0) < 0) {
             wprintf(L"receiving from server failed with error: %u\n", WSAGetLastError());
+            return 1;
+        }
         printf("Receiving:\n\n%s\n\n", receive);
 
         char response[1024];
@@ -60,8 +62,10 @@ int main() {
 
         //sending payload result
         printf("Sending: '%s' from agent...\n", response);
-        if(send(inferno_socket, response, sizeof(response), 0) < 0)
+        if (send(inferno_socket, response, sizeof(response), 0) < 0) {
             wprintf(L"sending to server failed with error: %u\n", WSAGetLastError());
+            return 1;
+        }
         printf("Sent:\n\n'%s' from agent...\n", response);
     }
 
