@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
 
-static void print_hello(GtkWidget *widget, gpointer data);
+static void open_c2(GtkApplication *app, gpointer user_data);
 
 static void activate(GtkApplication *app, gpointer user_data);
 
@@ -14,8 +14,13 @@ int main(int argc, char **argv) {
     return status;
 }
 
-static void print_hello(GtkWidget *widget, gpointer data) {
-    g_print("Hello from ASX\n");
+static void open_c2(GtkApplication *app, gpointer data) {
+    GtkWidget *window;
+    window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(window), "Inferno C2");
+    gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
+    gtk_window_present(GTK_WINDOW(window));
+
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
@@ -23,6 +28,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *grid;
     GtkWidget *button;
     GtkWidget *image;
+    GtkWidget *upperGrid;
 
     GtkWidget *entryAddress;
     GtkWidget *textAddress;
@@ -43,12 +49,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     grid = gtk_grid_new ();
     gtk_window_set_child (GTK_WINDOW (window), grid);
 
-    button = gtk_button_new_with_label("Enter");
-    g_signal_connect(button, "clicked", G_CALLBACK(print_hello), NULL);
-    gtk_grid_attach (GTK_GRID (grid), button, 1, 4, 1, 1);
-
     //image = gtk_image_new_from_file("../assets/images/Inferno.png");
-    //gtk_grid_attach (GTK_GRID (grid), image, 0, 0, 2, 2);
+    //gtk_window_set_child (GTK_WINDOW (window), image);
 
     entryAddress = gtk_entry_new();
     gtk_grid_attach(GTK_GRID (grid), entryAddress, 1, 1, 1, 1);
@@ -65,10 +67,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
     textOperator = gtk_label_new("Operator");
     gtk_grid_attach(GTK_GRID(grid), textOperator, 0, 3, 1, 1);
 
-    entryPassword = gtk_entry_new();
+    entryPassword = gtk_password_entry_new();
     gtk_grid_attach(GTK_GRID(grid), entryPassword, 1, 4, 1, 1);
     textPassword = gtk_label_new("Password");
     gtk_grid_attach(GTK_GRID(grid), textPassword, 0, 4, 1, 1);
 
+    button = gtk_button_new_with_label("Enter");
+    g_signal_connect(button, "clicked", G_CALLBACK(open_c2), NULL);
+    gtk_grid_attach (GTK_GRID (grid), button, 1, 5, 1, 1);
+
     gtk_window_present(GTK_WINDOW(window));
 }
+
+
