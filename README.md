@@ -14,6 +14,8 @@
 * Entering HTTP sessions
 * Destroying HTTP sessions
 * Switching sessions
+* Linux agent
+* Windows agent
 
 ## Architecture
 ![Inferno Architecture](/assets/images/architecture.png)
@@ -49,6 +51,9 @@ gcc server.c -o server
 ```
 ```bash
 gcc devil-lin.c -o devil-lin
+```
+```bash
+gcc devil-win.c -o devil-win
 ```
 > More devil-lin with different ports 80, 8080, 8000 etc
 
@@ -158,9 +163,6 @@ Closing c2 and exiting...
 > Exiting the C2
 
 ## Drawbacks
-> [!CAUTION]
-> Be careful to always having server running before start the client
-
 > [!NOTE]
 > Readme not updated to latest
 
