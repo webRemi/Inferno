@@ -66,9 +66,9 @@ First you will need to start the server
 ┌──(asx㉿asx)-[~/Inferno]
 └─$ ./server
 Initializing socket...
-Binding socket to c2 address...
+Binding socket to Inferno address...
 Listening to 127.0.0.1:33333
-Accepting...
+Accepting client...
 ```
 > Starting the server
 
@@ -76,7 +76,6 @@ Once the server is started it will listen on port 33333. Now you can start the c
 ```bash
 ┌──(asx㉿asx)-[~/Inferno]
 └─$ ./client
-[>] Initializing socket...
 
   _     <-. (`-')_            (`-')  _   (`-') <-. (`-')_                
  (_)       \( OO) )  <-.      ( OO).-/<-.(OO )    \( OO) )     .->       
@@ -88,8 +87,10 @@ Once the server is started it will listen on port 33333. Now you can start the c
  `--'   `--'  `--'   `--'     `------'`--' '--'`--'  `--'    `-----'     
 
 Info: X joined session
-[>] Connecting...
-[>] Connected
+[>] Initializing socket...
+[+] Socket initialized
+[>] Connecting to server...
+[+] Connected to server
 
 [ASX]@[INFERNO]> 
 ```
@@ -97,73 +98,147 @@ Info: X joined session
 
 You will see the connection is accepted. Now you can start an HTTP listener on port 80
 ```bash
-┌──(asx㉿asx)-[~/Inferno]
-└─$ ./client
-[>] Initializing socket...
-
-  _     <-. (`-')_            (`-')  _   (`-') <-. (`-')_                
- (_)       \( OO) )  <-.      ( OO).-/<-.(OO )    \( OO) )     .->       
- ,-(`-'),--./ ,--/(`-')-----.(,------.,------,),--./ ,--/ (`-')----.     
- | ( OO)|   \ |  |(OO|(_\---' |  .---'|   /`. '|   \ |  | ( OO).-.  '    
- |  |  )|  . '|  |)/ |  '--. (|  '--. |  |_.' ||  . '|  |)( _) | |  |    
-(|  |_/ |  |\    | \_)  .--'  |  .--' |  .   .'|  |\    |  \|  |)|  |    
- |  |'->|  | \   |  `|  |_)   |  `---.|  |\  \ |  | \   |   '  '-'  '    
- `--'   `--'  `--'   `--'     `------'`--' '--'`--'  `--'    `-----'     
-
-Info: X joined session
-[>] Connecting...
-[>] Connected
-
-[ASX]@[INFERNO]> http
-
-[>] Starting listener...
-[>] Listening
-==============================
- IP: 127.0.0.1                  
-==============================
- PORT: 80                
-==============================
-
-[>] Waiting for response...
+[ASX]@[INFERNO]> http 192.168.1.40 8080
+[+] Result:
+HTTP/1.0 200 OK
 ```
-> Starting an HTTP listener on port 80
+> Starting an HTTP listener on port 8080
 
-Now the client will wait that an agent is launched. You can launch an agent by the following command:
+Lets start another listener on port 80.
+```bash
+[ASX]@[INFERNO]> http 192.168.1.40 80
+[+] Result:
+HTTP/1.0 200 OK
+```
+> Starting another HTTP listener on port 80
+Now we will list active listeners
+```bash
+[ASX]@[INFERNO]> listeners
+[+] Result:
+ID	PROTOCOL	ADDRESS	PORT
+==	========	=======	====
+1	http		192.168.1.40	8080
+2	http		192.168.1.40	80
+```
+> Listing our listeners
+
+You can launch an agent by the following command:
 ```bash
 ┌──(asx㉿asx)-[~/Inferno]
-└─$ ./devil 
+└─$ ./devil-lin8080
 Initializing socket...
 Connecting...
 Connected
 ```
-> Starting an agent
+> Starting a linux agent
 
-Now you can enter session to interact with agent
+We can list our sessions
 ```bash
-[ASX]@[INFERNO]> enter
-Entering session...
-Sent: ok
+[ASX]@[INFERNO]> sessions
+[+] Result:
+ID	COMMUNICATION	REMOTE ADDRESS
+==	=============	===========
+1	http	192.168.1.40	8080
+```
+> Linux session is ready
+
+Now we can also launch a windows agent:
+```powershell
+PS C:\Users\Administrator> ./a.exe
+Hello ASX
+Initializing socket...
+Connecting...
+Connected
+```
+> Starting windows agent
+
+We can list to see if session windows joined
+```bash
+[ASX]@[INFERNO]> sessions
+[+] Result:
+ID	COMMUNICATION	REMOTE ADDRESS
+==	=============	===========
+1	http	192.168.1.40	8080
+2	http	192.168.1.40	80
+```
+> Both linux and windows sessions are there showing there remote address
+
+Now you can enter session to interact with agent, lets start with windows one
+```bash
+[ASX]@[INFERNO]> enter 2
+[+] Result:
+XXX
+[+] Entering session
+```
+> Entering the windows session
+
+We will said multiple commands:
+whoami
+```bash
+[ASX]@[SESSION]> whoami
+[>] Sending 6 bytes to server...
+[>] Receiving 15 bytes from server...
+[+] Result:
+Administrator
+
 
 [ASX]@[SESSION]> 
 ```
-> Entering the session
 
-Now its time to send commands
+pwd
 ```bash
-[ASX]@[SESSION]> whoami
-[>] Sending payload to server: whoami
-[>] Waiting for response...
-[>] Result: asx
-```
-> Task the agent to perform whoami command
+[ASX]@[SESSION]> pwd
+[>] Sending 3 bytes to server...
+[>] Receiving 24 bytes from server...
+[+] Result:
+C:\Users\Administrator
 
-You can now exit properly
+
+[ASX]@[SESSION]> 
+```
+
+hostname
+```bash
+[ASX]@[SESSION]> hostname
+[>] Sending 8 bytes to server...
+[>] Receiving 17 bytes from server...
+[+] Result:
+WIN-KIIR8T1ORA6
+
+
+[ASX]@[SESSION]> 
+```
+
+Now its time to send commands from linux
 ```bash
 [ASX]@[SESSION]> exit
-[>] 
-Closing c2 and exiting...
+[>] Sending 4 bytes to server...
+
+[ASX]@[INFERNO]> 
 ```
-> Exiting the C2
+```bash
+[ASX]@[INFERNO]> enter 1
+[+] Result:
+XXX
+[+] Entering session
+```
+```bash
+[ASX]@[SESSION]> whoami
+[>] Sending 6 bytes to server...
+[>] Receiving 5 bytes from server...
+[+] Result:
+asx
+
+
+[ASX]@[SESSION]> 
+```
+Its now time to exit Inferno
+```bash
+[ASX]@[INFERNO]> exit
+[>] Exiting Inferno...
+[+] Exited
+```
+> Exiting C2
 
 ## Drawbacks
 > [!NOTE]
