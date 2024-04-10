@@ -8,8 +8,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#define IP fjk;lasjf;lksajf;lks"
-RT_HTTP 80
+#define IP "127.0.0.1"
+#define PORT_HTTP 8000
 
 //handle erros
 void error(char *message) {
@@ -18,8 +18,9 @@ void error(char *message) {
 }
 
 char *executing(char *receive);
-
 char *whoamiCommand();
+char *hostnameCommand();
+char *pwdCommand();
 
 int main() {
     //socket http
@@ -69,6 +70,10 @@ char *executing(char *receive) {
     //execute whoami
     if (strcmp(receive, "whoami") == 0)
         task = whoamiCommand();
+    else if (strcmp(receive, "hostname") == 0)
+        task = hostnameCommand();
+    else if (strcmp(receive, "pwd") == 0)
+        task = pwdCommand();
     else
         task = "Not yet build";
     return task;
@@ -78,4 +83,18 @@ char *executing(char *receive) {
 char *whoamiCommand() {
     char *username = getlogin();
     return username;
+}
+
+//hostname syscall
+char *hostnameCommand() {
+    static char hostname[2048];
+    gethostname(hostname, 2048);
+    return hostname;
+}
+
+//pwd syscall
+char *pwdCommand() {
+    static char directory[2048];
+    getcwd(directory, 2048);
+    return directory;
 }
