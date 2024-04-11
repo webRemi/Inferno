@@ -109,23 +109,45 @@ void client(int inferno_socket) {
 
 void session(int inferno_socket) {
     while (1) {
-         //prompt
-         char request[1024];
-         printf("\n[ASX]@[SESSION]> ");
-         if (fgets(request, sizeof(request), stdin) == NULL){
-             perror("fgets failed");
-             exit(EXIT_FAILURE);
-         }
-         request[strcspn(request, "\n")] = '\0';
+        //prompt
+        char payload[1024];
+        printf("\n[ASX]@[SESSION]> ");
+        if (fgets(payload, sizeof(payload), stdin) == NULL){
+            perror("fgets failed");
+            exit(EXIT_FAILURE);
+        }
+        payload[strcspn(payload, "\n")] = '\0';
+
+        //copying original payload
+        char command_copy[1024];
+        strcpy(command_copy, payload);
+
+        //parsing payload
+        char *command = strtok(payload, " ");
+        char *arg1 = strtok(NULL, " ");
+        
+        //HTTP POST payload
+        static char request[1024];
+        sprintf(request, "POST /endpoint HTTP/1.0\r\n");
+        sprintf(request + strlen(request), "Host: inferno.com\r\n");
+        sprintf(request + strlen(request), "Content-Type: application/json\r\n");
+        sprintf(request + strlen(request), "Content-Length: %d\r\n", strlen(payload) + 14);
+        sprintf(request + strlen(request), "Connection: close\r\n\r\n");
+   
+        //add arguments to payload if any otherwise send payload
+        if (arg1 == NULL) 
+            sprintf(request + strlen(request), "{'payload':'%s'}", payload);
+        else
+            sprintf(request + strlen(request), "{'payload':'%s','argument':'%s'}", payload, arg1);
 
          box_info();
-         printf("Sending %d bytes to server...\n", strlen(request));
+         printf("Sending %d bytes to server...\n", strlen(payload));
 
          //sending request
          if (send(inferno_socket, request, sizeof(request), 0) == -1)
              error("Error sending command to server");
 
-         if (strcmp(request, "exit") == 0)
+         if (strcmp(payload, "exit") == 0)
              client(inferno_socket);
 
          //receving response

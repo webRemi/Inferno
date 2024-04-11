@@ -405,9 +405,9 @@ void *process_http_thread(void *args) {
          else if (receive == 0) {
              error("Client closed the connection");
          }
-         printf("Received for agent: %s\n", request_tcp);
+         printf("Received for client: %s\n", request_tcp);
 
-         if (strcmp(request_tcp, "exit") == 0) {
+         if (strstr(request_tcp, "exit")) {
              puts("exited");
              targs->selected_session = NULL;
              targs->tcp_accept = tcp_accept;

