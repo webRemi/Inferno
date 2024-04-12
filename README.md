@@ -39,8 +39,9 @@
 | WHOAMI | whoami | Get user login |
 | HOSTNAME | hostname | Get machine hostname |
 | LIST | ls | List files |
-| DIRECTORY | pwd | Print current directory
-| CHANGE DIRECTORY | cd | Change the current directory
+| DIRECTORY | pwd | Print current directory |
+| CHANGE DIRECTORY | cd | Change the current directory |
+| READ | cat | Read file |
 > Some commands can be run with arguments 
 
 ## Manual
