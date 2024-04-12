@@ -40,6 +40,7 @@
 | HOSTNAME | hostname | Get machine hostname |
 | LIST | ls | List files |
 | DIRECTORY | pwd | Print current directory
+| CHANGE DIRECTORY | cd | Change the current directory
 > Some commands can be run with arguments 
 
 ## Manual
