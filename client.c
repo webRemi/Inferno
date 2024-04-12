@@ -179,7 +179,7 @@ void banner() {
 
 void info() {
     printf("\033[1;31m");
-    char info[2048] = "X joined session";
+    char info[1024] = "X joined session";
     printf("\nInfo: %s\n", info);
     printf("\033[0m");
 }

