@@ -16,6 +16,7 @@ char *hostnameCommand();
 char *pwdCommand();
 char *cdCommand(char *directory);
 char *lsCommand(char *directory);
+char *catCommand(char *file);
 
 int main() {
     puts("Hello ASX");
@@ -117,6 +118,8 @@ char *executing(char *receive, char *arg) {
         task = cdCommand(arg);
     else if (strcmp(receive, "ls") == 0)
         task = lsCommand(arg);
+    else if (strcmp(receive, "cat") == 0)
+        task = catCommand(arg);
     else
         task = "Not yet build";
     return task;
@@ -189,4 +192,28 @@ char *lsCommand(char *directory) {
 
     FindClose(hFind);
     return buf;
+}
+
+char *catCommand(char *file) {
+    static char errorArg[1024];
+    if (file == NULL) {
+        sprintf(errorArg, "You must provide a file\n");
+        return errorArg;
+    }
+
+    if (file != NULL) {
+        HANDLE hfile;
+        hfile = CreateFile(file, FILE_GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        DWORD fileSize;
+        fileSize = GetFileSize(hfile, NULL);
+        char *buf = malloc(fileSize + 1);
+        buf[fileSize] = '\0';
+        DWORD dwBytesRead = 0;
+
+        if (!ReadFile(hfile, buf, fileSize, &dwBytesRead, NULL)) {
+            DWORD error = GetLastError();
+            return NULL;
+        }
+        return buf;
+    }
 }
