@@ -57,7 +57,7 @@ gcc server.c -o server
 gcc devil-lin.c -o devil-lin
 ```
 ```bash
-gcc devil-win.c -o devil-win
+i686-w64-mingw32-gcc -o devil-win.exe devil-win.c -lws2_32
 ```
 > More devil-lin with different ports 80, 8080, 8000 etc
 
